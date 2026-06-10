@@ -1,0 +1,443 @@
+[
+  {
+    "date": "2022-11-21",
+    "homeTeamId": "usa",
+    "awayTeamId": "ghana",
+    "homeGoals": 2,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "world_cup"
+  },
+  {
+    "date": "2022-11-23",
+    "homeTeamId": "morocco",
+    "awayTeamId": "croatia",
+    "homeGoals": 0,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "world_cup"
+  },
+  {
+    "date": "2022-11-23",
+    "homeTeamId": "japan",
+    "awayTeamId": "germany",
+    "homeGoals": 2,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "world_cup"
+  },
+  {
+    "date": "2022-11-26",
+    "homeTeamId": "argentina",
+    "awayTeamId": "mexico",
+    "homeGoals": 2,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "world_cup"
+  },
+  {
+    "date": "2022-11-26",
+    "homeTeamId": "france",
+    "awayTeamId": "denmark",
+    "homeGoals": 2,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "world_cup"
+  },
+  {
+    "date": "2022-11-28",
+    "homeTeamId": "brazil",
+    "awayTeamId": "switzerland",
+    "homeGoals": 1,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "world_cup"
+  },
+  {
+    "date": "2022-11-29",
+    "homeTeamId": "england",
+    "awayTeamId": "usa",
+    "homeGoals": 0,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "world_cup"
+  },
+  {
+    "date": "2022-12-02",
+    "homeTeamId": "south-korea",
+    "awayTeamId": "portugal",
+    "homeGoals": 2,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "world_cup"
+  },
+  {
+    "date": "2022-12-05",
+    "homeTeamId": "brazil",
+    "awayTeamId": "south-korea",
+    "homeGoals": 4,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "world_cup"
+  },
+  {
+    "date": "2022-12-09",
+    "homeTeamId": "croatia",
+    "awayTeamId": "brazil",
+    "homeGoals": 1,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "world_cup"
+  },
+  {
+    "date": "2022-12-10",
+    "homeTeamId": "morocco",
+    "awayTeamId": "portugal",
+    "homeGoals": 1,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "world_cup"
+  },
+  {
+    "date": "2022-12-18",
+    "homeTeamId": "argentina",
+    "awayTeamId": "france",
+    "homeGoals": 3,
+    "awayGoals": 3,
+    "neutral": true,
+    "competition": "world_cup"
+  },
+  {
+    "date": "2023-03-24",
+    "homeTeamId": "france",
+    "awayTeamId": "netherlands",
+    "homeGoals": 4,
+    "awayGoals": 0,
+    "neutral": false,
+    "competition": "qualifier"
+  },
+  {
+    "date": "2023-03-25",
+    "homeTeamId": "spain",
+    "awayTeamId": "norway",
+    "homeGoals": 3,
+    "awayGoals": 0,
+    "neutral": false,
+    "competition": "qualifier"
+  },
+  {
+    "date": "2023-06-15",
+    "homeTeamId": "spain",
+    "awayTeamId": "italy",
+    "homeGoals": 2,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2023-06-18",
+    "homeTeamId": "usa",
+    "awayTeamId": "canada",
+    "homeGoals": 2,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2023-09-09",
+    "homeTeamId": "germany",
+    "awayTeamId": "japan",
+    "homeGoals": 1,
+    "awayGoals": 4,
+    "neutral": false,
+    "competition": "friendly"
+  },
+  {
+    "date": "2023-09-12",
+    "homeTeamId": "senegal",
+    "awayTeamId": "algeria",
+    "homeGoals": 0,
+    "awayGoals": 1,
+    "neutral": false,
+    "competition": "friendly"
+  },
+  {
+    "date": "2023-10-12",
+    "homeTeamId": "colombia",
+    "awayTeamId": "uruguay",
+    "homeGoals": 2,
+    "awayGoals": 2,
+    "neutral": false,
+    "competition": "qualifier"
+  },
+  {
+    "date": "2023-10-12",
+    "homeTeamId": "argentina",
+    "awayTeamId": "paraguay",
+    "homeGoals": 1,
+    "awayGoals": 0,
+    "neutral": false,
+    "competition": "qualifier"
+  },
+  {
+    "date": "2023-10-17",
+    "homeTeamId": "uruguay",
+    "awayTeamId": "brazil",
+    "homeGoals": 2,
+    "awayGoals": 0,
+    "neutral": false,
+    "competition": "qualifier"
+  },
+  {
+    "date": "2023-11-16",
+    "homeTeamId": "ecuador",
+    "awayTeamId": "venezuela",
+    "homeGoals": 0,
+    "awayGoals": 0,
+    "neutral": false,
+    "competition": "qualifier"
+  },
+  {
+    "date": "2023-11-21",
+    "homeTeamId": "brazil",
+    "awayTeamId": "argentina",
+    "homeGoals": 0,
+    "awayGoals": 1,
+    "neutral": false,
+    "competition": "qualifier"
+  },
+  {
+    "date": "2024-01-14",
+    "homeTeamId": "nigeria",
+    "awayTeamId": "equatorial-guinea",
+    "homeGoals": 1,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-01-18",
+    "homeTeamId": "egypt",
+    "awayTeamId": "ghana",
+    "homeGoals": 2,
+    "awayGoals": 2,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-01-19",
+    "homeTeamId": "senegal",
+    "awayTeamId": "cameroon",
+    "homeGoals": 3,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-01-30",
+    "homeTeamId": "morocco",
+    "awayTeamId": "south-africa",
+    "homeGoals": 0,
+    "awayGoals": 2,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-02-02",
+    "homeTeamId": "nigeria",
+    "awayTeamId": "south-africa",
+    "homeGoals": 1,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-03-21",
+    "homeTeamId": "italy",
+    "awayTeamId": "venezuela",
+    "homeGoals": 2,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "friendly"
+  },
+  {
+    "date": "2024-03-23",
+    "homeTeamId": "england",
+    "awayTeamId": "brazil",
+    "homeGoals": 0,
+    "awayGoals": 1,
+    "neutral": false,
+    "competition": "friendly"
+  },
+  {
+    "date": "2024-06-20",
+    "homeTeamId": "argentina",
+    "awayTeamId": "canada",
+    "homeGoals": 2,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-06-24",
+    "homeTeamId": "colombia",
+    "awayTeamId": "paraguay",
+    "homeGoals": 2,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-06-26",
+    "homeTeamId": "ecuador",
+    "awayTeamId": "jamaica",
+    "homeGoals": 3,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-06-29",
+    "homeTeamId": "argentina",
+    "awayTeamId": "peru",
+    "homeGoals": 2,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-07-02",
+    "homeTeamId": "brazil",
+    "awayTeamId": "colombia",
+    "homeGoals": 1,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-07-09",
+    "homeTeamId": "argentina",
+    "awayTeamId": "canada",
+    "homeGoals": 2,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-07-14",
+    "homeTeamId": "argentina",
+    "awayTeamId": "colombia",
+    "homeGoals": 1,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-06-15",
+    "homeTeamId": "spain",
+    "awayTeamId": "croatia",
+    "homeGoals": 3,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-06-21",
+    "homeTeamId": "netherlands",
+    "awayTeamId": "france",
+    "homeGoals": 0,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-06-22",
+    "homeTeamId": "turkey",
+    "awayTeamId": "portugal",
+    "homeGoals": 0,
+    "awayGoals": 3,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-06-25",
+    "homeTeamId": "denmark",
+    "awayTeamId": "serbia",
+    "homeGoals": 0,
+    "awayGoals": 0,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-06-30",
+    "homeTeamId": "england",
+    "awayTeamId": "slovakia",
+    "homeGoals": 2,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-07-05",
+    "homeTeamId": "spain",
+    "awayTeamId": "germany",
+    "homeGoals": 2,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-07-06",
+    "homeTeamId": "netherlands",
+    "awayTeamId": "turkey",
+    "homeGoals": 2,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-07-09",
+    "homeTeamId": "spain",
+    "awayTeamId": "france",
+    "homeGoals": 2,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2024-07-14",
+    "homeTeamId": "spain",
+    "awayTeamId": "england",
+    "homeGoals": 2,
+    "awayGoals": 1,
+    "neutral": true,
+    "competition": "continental"
+  },
+  {
+    "date": "2025-03-20",
+    "homeTeamId": "iran",
+    "awayTeamId": "united-arab-emirates",
+    "homeGoals": 2,
+    "awayGoals": 0,
+    "neutral": false,
+    "competition": "qualifier"
+  },
+  {
+    "date": "2025-03-25",
+    "homeTeamId": "uzbekistan",
+    "awayTeamId": "qatar",
+    "homeGoals": 1,
+    "awayGoals": 0,
+    "neutral": false,
+    "competition": "qualifier"
+  },
+  {
+    "date": "2025-06-05",
+    "homeTeamId": "australia",
+    "awayTeamId": "japan",
+    "homeGoals": 0,
+    "awayGoals": 1,
+    "neutral": false,
+    "competition": "qualifier"
+  }
+]
