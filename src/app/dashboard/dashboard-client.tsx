@@ -14,6 +14,7 @@ import {
   Loader2,
   Medal,
   Save,
+  Share2,
   ShieldCheck,
   Sparkles,
   Trophy,
@@ -161,6 +162,7 @@ export function DashboardClient({
     useState<TournamentSimulationSummary>(initialSimulation);
   const [leaderboard, setLeaderboard] =
     useState<LeaderboardEntry[]>(initialLeaderboard);
+  const [savedBracketId, setSavedBracketId] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState("Portfolio Reviewer");
   const [championPick, setChampionPick] = useState("argentina");
   const [finalistPick, setFinalistPick] = useState("france");
@@ -260,7 +262,8 @@ export function DashboardClient({
         }),
       });
 
-      await readApi<{ entry: LeaderboardEntry }>(response);
+      const { entry } = await readApi<{ entry: LeaderboardEntry }>(response);
+      setSavedBracketId(entry.id);
       const leaderboardResponse = await fetch("/api/leaderboard");
       const payload = await readApi<LeaderboardPayload>(leaderboardResponse);
       setLeaderboard(payload.entries);
@@ -993,6 +996,15 @@ export function DashboardClient({
                     )}
                     {isSaving ? "Saving..." : "Save demo bracket"}
                   </button>
+                  {savedBracketId ? (
+                    <Link
+                      href={`/bracket/${savedBracketId}`}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-emerald-300/30 bg-emerald-300/10 px-4 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-300/15"
+                    >
+                      <Share2 className="size-4" aria-hidden="true" />
+                      View &amp; share your bracket
+                    </Link>
+                  ) : null}
                 </div>
               </Card>
               <Card className="overflow-hidden">
@@ -1017,7 +1029,12 @@ export function DashboardClient({
                         <tr key={entry.id} className="border-t border-white/5">
                           <td className="px-5 py-4 text-zinc-400">{index + 1}</td>
                           <td className="px-5 py-4 font-semibold text-white">
-                            {entry.name}
+                            <Link
+                              href={`/bracket/${entry.id}`}
+                              className="text-white underline-offset-4 transition hover:text-emerald-200 hover:underline"
+                            >
+                              {entry.name}
+                            </Link>
                           </td>
                           <td className="px-5 py-4 text-zinc-300">
                             {getTeamName(entry.championTeamId)}

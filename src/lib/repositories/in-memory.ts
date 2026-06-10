@@ -37,6 +37,15 @@ const demoEntries: LeaderboardEntry[] = [
     createdAt: "2026-06-04T18:10:00.000Z",
     mode: DATASET_MODE,
   },
+  {
+    id: "demo-4",
+    name: "Dark Horse Believer",
+    championTeamId: "morocco",
+    finalistTeamId: "portugal",
+    score: 63,
+    createdAt: "2026-06-05T12:00:00.000Z",
+    mode: DATASET_MODE,
+  },
 ];
 
 const globalStore = globalThis as typeof globalThis & {
