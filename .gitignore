@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# brand asset masters (large PNG sources; derived .webp/icons/og-card are committed)
+/assets-src/

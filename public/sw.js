@@ -1,5 +1,7 @@
 const CACHE_NAME = "worldcup-oracle-v1";
-const APP_SHELL = ["/", "/dashboard", "/model-lab", "/images/stadium-oracle-hero.png"];
+// The hero image is served as an optimized variant via next/image, so it is not
+// precached here by static path. Precache navigable routes only.
+const APP_SHELL = ["/", "/dashboard", "/model-lab", "/calibration"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

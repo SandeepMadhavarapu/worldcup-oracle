@@ -3,12 +3,12 @@
 //
 //   npm run derive:assets
 //
-// Inputs (committed masters):
-//   public/images/stadium-oracle-hero.png   (the hero / source of truth)
-//   public/images/texture-mesh.png
-//   public/images/texture-bracket.png
+// Inputs (untracked masters — assets-src/ is gitignored, not needed to build):
+//   assets-src/stadium-oracle-hero.png   (the hero / source of truth)
+//   assets-src/texture-mesh.png
+//   assets-src/texture-bracket.png
 //
-// Outputs (generated, safe to delete and regenerate):
+// Outputs (committed build inputs, safe to delete and regenerate):
 //   public/icons/icon-192.png
 //   public/icons/icon-512.png
 //   public/icons/icon-512-maskable.png
@@ -23,15 +23,17 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const assetsSrcDir = join(root, "assets-src");
 const imagesDir = join(root, "public", "images");
 const iconsDir = join(root, "public", "icons");
 
-const inImage = (name) => join(imagesDir, name);
+const srcImage = (name) => join(assetsSrcDir, name);
+const outImage = (name) => join(imagesDir, name);
 const outPublic = (...parts) => join(root, "public", ...parts);
 
-const HERO = inImage("stadium-oracle-hero.png");
-const MESH = inImage("texture-mesh.png");
-const BRACKET = inImage("texture-bracket.png");
+const HERO = srcImage("stadium-oracle-hero.png");
+const MESH = srcImage("texture-mesh.png");
+const BRACKET = srcImage("texture-bracket.png");
 
 // Navy used for the maskable safe-zone backdrop and text scrim.
 const NAVY = "#040a19";
@@ -153,15 +155,15 @@ async function deriveWebp() {
   await sharp(HERO)
     .resize({ width: 2400, withoutEnlargement: true })
     .webp({ quality: 80 })
-    .toFile(inImage("stadium-oracle-hero.webp"));
+    .toFile(outImage("stadium-oracle-hero.webp"));
   await sharp(MESH)
     .resize({ width: 1920, withoutEnlargement: true })
     .webp({ quality: 80 })
-    .toFile(inImage("texture-mesh.webp"));
+    .toFile(outImage("texture-mesh.webp"));
   await sharp(BRACKET)
     .resize({ width: 1920, withoutEnlargement: true })
     .webp({ quality: 80 })
-    .toFile(inImage("texture-bracket.webp"));
+    .toFile(outImage("texture-bracket.webp"));
 }
 
 async function main() {
