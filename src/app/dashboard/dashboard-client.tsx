@@ -33,6 +33,7 @@ import {
 } from "recharts";
 
 import { Card, ProbabilityBar, Section, Shell, StatusPill } from "@/components/ui";
+import { MAX_PUBLIC_SIMULATIONS } from "@/lib/tournament/constants";
 import type {
   LeaderboardEntry,
   MatchPrediction,
@@ -76,6 +77,7 @@ const tabs: Array<{
   { id: "teams", label: "Teams", icon: Users },
   { id: "leaderboard", label: "Leaderboard", icon: Medal },
 ];
+const simulationOptions = [1, 500, MAX_PUBLIC_SIMULATIONS];
 
 function pct(value: number, digits = 1): string {
   return `${(value * 100).toFixed(digits)}%`;
@@ -675,7 +677,7 @@ export function DashboardClient({
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {[1, 1000, 10000].map((count) => (
+                      {simulationOptions.map((count) => (
                         <button
                           key={count}
                           type="button"
@@ -702,8 +704,14 @@ export function DashboardClient({
                       Champion Probability
                     </h2>
                   </div>
-                  <div className="mt-5 h-[320px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="mt-5 h-[320px] min-h-[320px] min-w-0">
+                    <ResponsiveContainer
+                      width="100%"
+                      height="100%"
+                      minWidth={0}
+                      minHeight={0}
+                      initialDimension={{ width: 640, height: 320 }}
+                    >
                       <BarChart data={championData}>
                         <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
                         <XAxis dataKey="name" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
@@ -956,8 +964,8 @@ export function DashboardClient({
                   </h2>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-zinc-500">
-                  Demo Mode only. Saved entries are in-memory for local portfolio
-                  review.
+                  Demo Mode only. Saved entries and bracket links are temporary
+                  until a database adapter is wired.
                 </p>
                 <div className="mt-5 grid gap-4">
                   <label>
@@ -1002,7 +1010,7 @@ export function DashboardClient({
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-emerald-300/30 bg-emerald-300/10 px-4 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-300/15"
                     >
                       <Share2 className="size-4" aria-hidden="true" />
-                      View &amp; share your bracket
+                      View temporary bracket link
                     </Link>
                   ) : null}
                 </div>

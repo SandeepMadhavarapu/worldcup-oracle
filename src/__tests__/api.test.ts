@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { GET as calibrationGet } from "@/app/api/calibration/route";
 import { POST as predictMatchPost } from "@/app/api/predict-match/route";
 import { POST as simulateTournamentPost } from "@/app/api/simulate-tournament/route";
+import { enforceRateLimit, resetRateLimitStoreForTests } from "@/lib/api/rate-limit";
 import type { CalibrationReport } from "@/lib/calibration/types";
+import { MAX_PUBLIC_SIMULATIONS } from "@/lib/tournament/constants";
 import type { ApiResponse } from "@/lib/types";
 
 async function parse<T>(response: Response): Promise<ApiResponse<T>> {
@@ -11,6 +13,10 @@ async function parse<T>(response: Response): Promise<ApiResponse<T>> {
 }
 
 describe("api route validation", () => {
+  beforeEach(() => {
+    resetRateLimitStoreForTests();
+  });
+
   it("rejects invalid match prediction input with a typed error envelope", async () => {
     const response = await predictMatchPost(
       new Request("http://localhost/api/predict-match", {
@@ -27,17 +33,46 @@ describe("api route validation", () => {
   });
 
   it("rejects oversized simulation requests", async () => {
+    const startedAt = performance.now();
     const response = await simulateTournamentPost(
       new Request("http://localhost/api/simulate-tournament", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ iterations: 10001, seed: "too-many" }),
+        body: JSON.stringify({
+          iterations: MAX_PUBLIC_SIMULATIONS + 1,
+          seed: "too-many",
+        }),
       }),
     );
+    const elapsedMs = performance.now() - startedAt;
     const payload = await parse(response);
 
     expect(response.status).toBe(422);
     expect(payload.ok).toBe(false);
+    expect(elapsedMs).toBeLessThan(500);
+  });
+
+  it("allows the public max simulation count", async () => {
+    const startedAt = performance.now();
+    const response = await simulateTournamentPost(
+      new Request("http://localhost/api/simulate-tournament", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          iterations: MAX_PUBLIC_SIMULATIONS,
+          seed: "max-public",
+        }),
+      }),
+    );
+    const elapsedMs = performance.now() - startedAt;
+    const payload = await parse<{ simulation: { iterations: number } }>(response);
+
+    expect(response.status).toBe(200);
+    expect(payload.ok).toBe(true);
+    expect(payload.ok ? payload.data.simulation.iterations : 0).toBe(
+      MAX_PUBLIC_SIMULATIONS,
+    );
+    expect(elapsedMs).toBeLessThan(10_000);
   });
 
   it("returns a typed success envelope for valid simulation requests", async () => {
@@ -53,6 +88,83 @@ describe("api route validation", () => {
     expect(response.status).toBe(200);
     expect(payload.ok).toBe(true);
     expect(payload.ok ? payload.data.simulation.iterations : 0).toBe(2);
+  });
+
+  it("returns a friendly malformed JSON error without parser details", async () => {
+    const response = await predictMatchPost(
+      new Request("http://localhost/api/predict-match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{\"teamAId\":\"argentina\",",
+      }),
+    );
+    const payload = await parse(response);
+
+    expect(response.status).toBe(400);
+    expect(payload.ok).toBe(false);
+
+    if (!payload.ok) {
+      expect(payload.error.code).toBe("INVALID_JSON");
+      expect(payload.error.message).toBe(
+        "Invalid JSON body. Please check the request payload.",
+      );
+      expect(payload.error.message).not.toContain("position");
+      expect(payload.error.message).not.toContain("Unexpected");
+    }
+  });
+
+  it("rate limits repeated demo requests", async () => {
+    const options = {
+      keyPrefix: "test-repeat",
+      limit: 2,
+      windowMs: 60_000,
+    };
+    const request = new Request("http://localhost/api/predict-match", {
+      headers: { "User-Agent": "rate-test" },
+    });
+
+    expect(enforceRateLimit(request, options)).toBeNull();
+    expect(enforceRateLimit(request, options)).toBeNull();
+
+    const limited = enforceRateLimit(request, options);
+
+    expect(limited?.status).toBe(429);
+  });
+
+  it("does not let spoofed X-Forwarded-For alone bypass the demo limiter", async () => {
+    const options = {
+      keyPrefix: "test-spoof",
+      limit: 2,
+      windowMs: 60_000,
+    };
+
+    for (let index = 0; index < 2; index += 1) {
+      const allowed = enforceRateLimit(
+        new Request("http://localhost/api/predict-match", {
+          headers: {
+            "User-Agent": "spoof-test",
+            "Accept-Language": "en-US",
+            "X-Forwarded-For": `203.0.113.${index}`,
+          },
+        }),
+        options,
+      );
+
+      expect(allowed).toBeNull();
+    }
+
+    const limited = enforceRateLimit(
+      new Request("http://localhost/api/predict-match", {
+        headers: {
+          "User-Agent": "spoof-test",
+          "Accept-Language": "en-US",
+          "X-Forwarded-For": "203.0.113.200",
+        },
+      }),
+      options,
+    );
+
+    expect(limited?.status).toBe(429);
   });
 
   it("returns a typed calibration report sourced from resolved matches", async () => {

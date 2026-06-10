@@ -1,0 +1,1 @@
+export const MAX_PUBLIC_SIMULATIONS = 1000;

@@ -1,11 +1,15 @@
 import type { MetadataRoute } from "next";
 
+import { getPublicSiteUrl } from "@/lib/site-url";
+
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = getPublicSiteUrl();
+
   return {
     rules: {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://worldcup-oracle.example.com/sitemap.xml",
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }

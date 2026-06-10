@@ -10,7 +10,12 @@ import {
   runTournamentSimulation,
   simulateSingleTournament,
 } from "@/lib/tournament/simulator";
-import { GROUP_CODES, type GroupCode, type StandingRow } from "@/lib/types";
+import {
+  GROUP_CODES,
+  type GroupCode,
+  type SingleTournamentSimulation,
+  type StandingRow,
+} from "@/lib/types";
 
 function row(
   teamId: string,
@@ -32,6 +37,28 @@ function row(
     points,
     status: "pending",
   };
+}
+
+function roundOf32SameGroupRematches(
+  simulation: SingleTournamentSimulation,
+): string[] {
+  const groupByTeam = new Map(
+    Object.entries(simulation.groupTables).flatMap(([groupCode, rows]) =>
+      rows.map((standing) => [standing.teamId, groupCode]),
+    ),
+  );
+  const roundOf32 = simulation.bracket.find(
+    (round) => round.name === "Round of 32",
+  );
+
+  return (
+    roundOf32?.matches
+      .filter(
+        (match) =>
+          groupByTeam.get(match.homeTeamId) === groupByTeam.get(match.awayTeamId),
+      )
+      .map((match) => `${match.homeTeamId}-${match.awayTeamId}`) ?? []
+  );
 }
 
 describe("tournament rules", () => {
@@ -120,6 +147,21 @@ describe("tournament rules", () => {
       .toHaveLength(16);
     expect(first.bracket.find((round) => round.name === "Final")?.matches)
       .toHaveLength(1);
+    expect(first.bracketResolution.isApproximation).toBe(true);
+    expect(first.bracketResolution.thirdPlaceCompatibilityApplied).toBe(true);
+    expect(first.bracketResolution.warning).toContain("approx");
+  });
+
+  it("avoids same-group Round-of-32 rematches for representative seeds", () => {
+    const ratings = buildTeamRatings();
+
+    for (let index = 0; index < 50; index += 1) {
+      const simulation = simulateSingleTournament(`bracket-edge-${index}`, ratings);
+
+      expect(roundOf32SameGroupRematches(simulation)).toEqual([]);
+      expect(simulation.bracketResolution.isApproximation).toBe(true);
+      expect(simulation.bracketResolution.unresolvedSameGroupRematches).toBe(0);
+    }
   });
 
   it("returns stable Monte Carlo probabilities for deterministic seeds", () => {
@@ -150,6 +192,8 @@ describe("tournament rules", () => {
     expect(summary.metadata.simulationCount).toBe(3);
     expect(summary.metadata.seed).toBe("metadata-test");
     expect(summary.metadata.modelVersion).toContain("worldcup-oracle");
+    expect(summary.metadata.bracketResolution.isApproximation).toBe(true);
+    expect(summary.metadata.bracketResolution.warning).toContain("Round-of-32");
     expect(summary.qualificationProbabilities.length).toBeGreaterThan(0);
     expect(summary.qualificationProbabilities[0]?.groupAdvance).toBeGreaterThanOrEqual(0);
   });

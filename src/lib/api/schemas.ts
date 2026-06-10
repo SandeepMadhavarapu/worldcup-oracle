@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { teams } from "@/lib/data";
+import { MAX_PUBLIC_SIMULATIONS } from "@/lib/tournament/constants";
 
 const teamIds = new Set(teams.map((team) => team.id));
 
@@ -23,7 +24,14 @@ export const predictMatchRequestSchema = z
   });
 
 export const simulateTournamentRequestSchema = z.object({
-  iterations: z.number().int().min(1).max(10000).default(1000),
+  iterations: z
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_PUBLIC_SIMULATIONS, {
+      message: `Public demo simulations are capped at ${MAX_PUBLIC_SIMULATIONS}.`,
+    })
+    .default(MAX_PUBLIC_SIMULATIONS),
   seed: z.string().trim().min(1).max(80).default("worldcup-oracle"),
 });
 

@@ -14,6 +14,7 @@ Important boundaries:
 - Do not add scores unless sourced and completed.
 - Keep source labels on every curated row.
 - This project has no FIFA affiliation or endorsement.
+- Round-of-32 third-place placement currently uses a deterministic compatibility fallback to avoid same-group rematches where possible. It is still an approximation until the exact official matrix is manually curated.
 
 Recommended completion workflow:
 

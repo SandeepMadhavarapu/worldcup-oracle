@@ -29,10 +29,10 @@ See `public/screenshots/README.md` for polished captions and capture guidance.
 - Premium dark-mode sports intelligence UI with responsive dashboard tabs.
 - Match predictor with win/draw/loss probabilities, expected goals, scoreline distribution, confidence, and "why this prediction" factors.
 - 48-team World Cup structure: 12 groups of 4, top two advance, 8 best third-place teams, Round of 32 through final.
-- Monte Carlo simulator with 1, 1,000, and 10,000 iteration controls.
+- Monte Carlo simulator with public-demo-safe 1, 500, and 1,000 iteration controls.
 - Champion Probability, Most Likely Final, Dark Horse Detector, Upset Risk, Group Chaos Meter, Model Confidence, and Third-Place Bubble sections.
 - Team intelligence pages with rating, form, attack, defense, and round probabilities.
-- Demo prediction game and leaderboard clearly labeled as in-memory Demo Mode.
+- Demo prediction game and leaderboard clearly labeled as temporary in-memory Demo Mode.
 - PWA manifest, service worker shell caching, metadata, sitemap, and robots file.
 - PostgreSQL/Supabase-ready schema with RLS notes.
 - Official-data-ready 2026 tournament dataset structure with source notes and honest placeholder labels.
@@ -89,7 +89,7 @@ The model is a practical baseline, not a claim of real forecasting superiority.
 - Knockout starts at Round of 32
 - Total tournament structure: 104 matches
 
-The Round-of-32 matrix is an MVP approximation until an official verified fixture matrix is wired in.
+The Round-of-32 matrix is an MVP approximation until an official verified fixture matrix is wired in. The current resolver applies a deterministic compatibility fallback to avoid same-group Round-of-32 rematches where possible, and simulation metadata labels the result as approximate.
 
 ## Dataset Mode
 
@@ -134,7 +134,7 @@ Routes:
 - `POST /api/save-bracket`
 - `GET /api/leaderboard`
 
-POST routes use Zod validation and a small in-memory rate-limit-ready helper.
+POST routes use Zod validation and a safer in-memory demo rate-limit helper. The limiter does not trust arbitrary `X-Forwarded-For` by itself, but it is still per-process. Public production should move rate-limit buckets to a shared store such as Upstash Redis, Vercel KV, Supabase, or another managed data store.
 
 ## Database Schema
 
@@ -152,7 +152,7 @@ POST routes use Zod validation and a small in-memory rate-limit-ready helper.
 - `user_brackets`
 - `leaderboard_entries`
 
-The schema includes useful indexes, `created_at`, `updated_at`, and Supabase RLS notes. The app currently runs without a database so the portfolio demo remains easy to install.
+The schema includes useful indexes, `created_at`, `updated_at`, and Supabase RLS notes. The app currently runs without a database so the portfolio demo remains easy to install. In Demo Mode, saved leaderboard entries and shared bracket URLs are in-memory and are not durable across process restarts.
 
 ## Run Locally
 
@@ -169,12 +169,14 @@ Copy `.env.example` to `.env.local` for provider/database work.
 
 ```text
 LIVE_DATA_PROVIDER=none
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 FOOTBALL_DATA_API_KEY=
 API_FOOTBALL_KEY=
 DATABASE_URL=
 ```
 
 Do not expose provider keys through `NEXT_PUBLIC_*`.
+Set `NEXT_PUBLIC_SITE_URL` to the deployed public origin before a public portfolio launch. If it is missing, metadata falls back to Vercel's deployment URL when available, then `http://localhost:3000` for local development.
 
 ## Testing
 
@@ -205,7 +207,7 @@ Recommended path:
 2. Import the repo into Vercel.
 3. Keep `LIVE_DATA_PROVIDER=none` unless real provider keys are configured.
 4. Add `DATABASE_URL` only after persistence is implemented.
-5. Update `metadataBase`, sitemap URL, and README live demo URL.
+5. Set `NEXT_PUBLIC_SITE_URL` to the public deployment origin and update the README live demo URL.
 6. Add screenshots after deployment.
 
 See `DEPLOYMENT.md` for the full checklist.
@@ -214,9 +216,10 @@ See `DEPLOYMENT.md` for the full checklist.
 
 - Sample data is intentionally compact and incomplete.
 - Model metrics are scaffolded on sample rows and are not out-of-sample calibration claims.
-- The bracket pairing matrix is deterministic but approximate.
-- Demo leaderboard is in-memory and resets with the server.
+- The bracket pairing matrix is deterministic but approximate until the exact official matrix is fully curated.
+- Demo leaderboard and shared bracket links are in-memory and reset with the server.
 - No production auth or database writes are active yet.
+- The in-memory rate limiter is appropriate for a demo, not a distributed production deployment.
 - Predictions are educational estimates, not official FIFA data and not betting advice.
 - Official fixtures are not fully curated in-repo yet; placeholder rows are explicitly labeled.
 

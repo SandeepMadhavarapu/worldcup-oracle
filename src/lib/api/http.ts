@@ -44,6 +44,14 @@ export function jsonError(
   return Response.json(payload, { status });
 }
 
+function isJsonParseError(error: Error): boolean {
+  return (
+    error instanceof SyntaxError ||
+    error.message.includes("JSON") ||
+    error.message.includes("property name")
+  );
+}
+
 export function handleRouteError(error: unknown): Response {
   if (error instanceof ZodError) {
     return jsonError(
@@ -57,6 +65,14 @@ export function handleRouteError(error: unknown): Response {
   if (error instanceof Error) {
     if (process.env.NODE_ENV !== "production") {
       console.error(error);
+    }
+
+    if (isJsonParseError(error)) {
+      return jsonError(
+        "INVALID_JSON",
+        "Invalid JSON body. Please check the request payload.",
+        400,
+      );
     }
 
     return jsonError("REQUEST_ERROR", error.message, 400);

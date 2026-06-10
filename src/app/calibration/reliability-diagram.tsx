@@ -70,8 +70,14 @@ export function ReliabilityDiagram({
     }));
 
   return (
-    <div className="h-[420px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-[420px] min-h-[420px] min-w-0 w-full">
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        minWidth={0}
+        minHeight={0}
+        initialDimension={{ width: 720, height: 420 }}
+      >
         <ScatterChart margin={{ top: 12, right: 16, bottom: 28, left: 8 }}>
           <CartesianGrid stroke="rgba(255,255,255,0.08)" />
           <XAxis

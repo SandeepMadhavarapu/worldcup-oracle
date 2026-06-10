@@ -143,8 +143,9 @@ export default async function BracketPage({
               </span>
             </div>
             <p className="mt-5 text-sm leading-7 text-zinc-400">
-              Demo bracket score: {model.score}. Saved entries are in-memory for
-              local portfolio review.
+              Demo bracket score: {model.score}. Saved entries and shared links
+              are in-memory in Demo Mode and are not durable until the database
+              adapter is wired.
             </p>
           </Card>
         </div>

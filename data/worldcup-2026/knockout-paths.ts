@@ -44,5 +44,5 @@ export const roundOf32Paths: RoundOf32Path[] = [
   away: away as KnockoutEntrant,
   sourceLabel: "data-driven MVP resolver",
   approximationNote:
-    "Third-place placement uses deterministic rank fallback until exact official third-place matchup table is manually curated.",
+    "Third-place placement uses deterministic compatibility fallback until exact official third-place matchup table is manually curated.",
 }));

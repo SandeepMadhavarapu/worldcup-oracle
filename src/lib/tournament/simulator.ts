@@ -9,7 +9,8 @@ import {
   createGroupFixtures,
   rankThirdPlaceTeams,
 } from "@/lib/tournament/rules";
-import { resolveRoundOf32Paths } from "@/lib/worldcup-2026/knockout-path-resolver";
+import { MAX_PUBLIC_SIMULATIONS } from "@/lib/tournament/constants";
+import { resolveRoundOf32PathsWithMetadata } from "@/lib/worldcup-2026/knockout-path-resolver";
 import {
   GROUP_CODES,
   type GroupCode,
@@ -17,6 +18,7 @@ import {
   type SimulatedMatch,
   type SingleTournamentSimulation,
   type StandingRow,
+  type BracketResolutionMetadata,
   type TeamRoundProbability,
   type TeamRating,
   type TeamQualificationProbability,
@@ -24,6 +26,15 @@ import {
 } from "@/lib/types";
 
 const MODEL_VERSION = "worldcup-oracle-baseline-v2";
+
+const DEFAULT_BRACKET_RESOLUTION: BracketResolutionMetadata = {
+  isApproximation: true,
+  thirdPlaceCompatibilityApplied: false,
+  sameGroupRematchesAvoided: 0,
+  unresolvedSameGroupRematches: 0,
+  warning:
+    "Round-of-32 third-place placement is approximate until the exact official matrix is curated.",
+};
 
 type RoundCounter = Omit<TeamRoundProbability, "teamId"> & {
   topTwo: number;
@@ -184,10 +195,13 @@ export function simulateSingleTournament(
   ratings: Map<string, TeamRating> = buildTeamRatings(),
 ): SingleTournamentSimulation {
   const groupStage = simulateGroupStage(ratings, seed);
-  const roundOf32Pairings = resolveRoundOf32Paths(
+  const roundOf32Resolution = resolveRoundOf32PathsWithMetadata(
     groupStage.groupTables,
     groupStage.bestThirdPlace,
-  ).map((path) => [path.homeTeamId, path.awayTeamId] as [string, string]);
+  );
+  const roundOf32Pairings = roundOf32Resolution.paths.map(
+    (path) => [path.homeTeamId, path.awayTeamId] as [string, string],
+  );
   const roundOf32 = simulateKnockoutRound(
     "Round of 32",
     roundOf32Pairings,
@@ -229,6 +243,7 @@ export function simulateSingleTournament(
     groupTables: groupStage.groupTables,
     bestThirdPlace: groupStage.bestThirdPlace,
     eliminatedThirdPlace: groupStage.eliminatedThirdPlace,
+    bracketResolution: roundOf32Resolution.metadata,
     bracket: [
       roundOf32.round,
       roundOf16.round,
@@ -361,16 +376,24 @@ export function runTournamentSimulation({
   seed = "worldcup-oracle",
   ratings = buildTeamRatings(),
 }: SimulateOptions = {}): TournamentSimulationSummary {
-  const boundedIterations = Math.max(1, Math.min(10000, Math.floor(iterations)));
+  const boundedIterations = Math.max(
+    1,
+    Math.min(MAX_PUBLIC_SIMULATIONS, Math.floor(iterations)),
+  );
   const counters = new Map(teams.map((team) => [team.id, createCounter()]));
   const finalPairCounts = new Map<string, number>();
   let firstSimulation: SingleTournamentSimulation | undefined;
+  let bracketResolution: BracketResolutionMetadata | undefined;
 
   for (let index = 0; index < boundedIterations; index += 1) {
     const simulation = simulateSingleTournament(`${seed}:${index}`, ratings);
 
     if (!firstSimulation) {
       firstSimulation = simulation;
+    }
+
+    if (!bracketResolution) {
+      bracketResolution = simulation.bracketResolution;
     }
 
     addGroupAdvancers(counters, simulation);
@@ -443,6 +466,7 @@ export function runTournamentSimulation({
       datasetMode: DATASET_MODE,
       generatedAt: new Date().toISOString(),
       modelVersion: MODEL_VERSION,
+      bracketResolution: bracketResolution ?? DEFAULT_BRACKET_RESOLUTION,
     },
     teams,
     probabilities,

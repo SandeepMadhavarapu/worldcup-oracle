@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
 
 import { teams } from "@/lib/data";
-
-const baseUrl = "https://worldcup-oracle.example.com";
+import { getPublicSiteUrl } from "@/lib/site-url";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const baseUrl = getPublicSiteUrl();
+
   return [
     "",
     "/dashboard",

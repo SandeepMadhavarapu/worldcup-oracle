@@ -16,8 +16,8 @@ WorldCup Oracle is ready for Vercel deployment in Sample Dataset Mode.
 
 3. Keep `LIVE_DATA_PROVIDER=none` unless real server-side provider keys are configured.
 4. Do not add provider keys with `NEXT_PUBLIC_`.
-5. Update `metadataBase` in `src/app/layout.tsx` after the Vercel URL is known.
-6. Update `baseUrl` in `src/app/sitemap.ts` after the Vercel URL is known.
+5. Set `NEXT_PUBLIC_SITE_URL` to the public deployment origin after the Vercel URL is known.
+6. Keep Demo Mode copy visible unless durable database persistence is wired.
 
 ## Vercel Settings
 
@@ -32,10 +32,17 @@ Optional for current demo:
 
 ```text
 LIVE_DATA_PROVIDER=none
+NEXT_PUBLIC_SITE_URL=https://your-vercel-deployment-url.vercel.app
 FOOTBALL_DATA_API_KEY=
 API_FOOTBALL_KEY=
 DATABASE_URL=
 ```
+
+`NEXT_PUBLIC_SITE_URL` drives metadata, Open Graph URLs, `sitemap.xml`, and `robots.txt`. If it is missing, the app falls back to Vercel's deployment URL when available, then `http://localhost:3000` for local development.
+
+The built-in rate limiter is in-memory and per-process. For production traffic, move the buckets to a shared store such as Upstash Redis, Vercel KV, Supabase, or another managed data store.
+
+Demo leaderboard entries and bracket share URLs are in-memory only. They are useful for portfolio review, but they are not durable across redeploys or server restarts until the repository abstraction is wired to a database.
 
 ## After Deploying
 

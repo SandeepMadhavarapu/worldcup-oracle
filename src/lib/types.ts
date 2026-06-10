@@ -172,11 +172,20 @@ export interface KnockoutRound {
   matches: SimulatedMatch[];
 }
 
+export interface BracketResolutionMetadata {
+  isApproximation: boolean;
+  thirdPlaceCompatibilityApplied: boolean;
+  sameGroupRematchesAvoided: number;
+  unresolvedSameGroupRematches: number;
+  warning?: string;
+}
+
 export interface SingleTournamentSimulation {
   groupTables: Record<GroupCode, StandingRow[]>;
   bestThirdPlace: StandingRow[];
   eliminatedThirdPlace: StandingRow[];
   bracket: KnockoutRound[];
+  bracketResolution: BracketResolutionMetadata;
   championTeamId: string;
   runnerUpTeamId: string;
   thirdPlaceTeamId: string;
@@ -190,6 +199,25 @@ export interface TeamRoundProbability {
   semiFinal: number;
   final: number;
   champion: number;
+}
+
+export interface TitleRunStep {
+  round: KnockoutRound["name"];
+  opponentTeamId: string;
+}
+
+export interface TeamTitlePath {
+  teamId: string;
+  /** Number of simulations this team won the title. */
+  titleCount: number;
+  /** titleCount / iterations. */
+  championProbability: number;
+  /** The most frequent sequence of opponents beaten across title runs. */
+  modalPath: TitleRunStep[];
+  /** Simulations whose title run followed the modal path. */
+  modalCount: number;
+  /** modalCount / titleCount. */
+  modalShare: number;
 }
 
 export interface TeamQualificationProbability {
@@ -209,10 +237,13 @@ export interface TournamentSimulationSummary {
     datasetMode: DatasetMode;
     generatedAt: string;
     modelVersion: string;
+    bracketResolution: BracketResolutionMetadata;
   };
   teams: Team[];
   probabilities: TeamRoundProbability[];
   qualificationProbabilities: TeamQualificationProbability[];
+  /** Modal title runs per team; only populated when collectTitlePaths is set. */
+  titlePaths?: TeamTitlePath[];
   single: SingleTournamentSimulation;
   mostLikelyFinal: {
     teamAId: string;
