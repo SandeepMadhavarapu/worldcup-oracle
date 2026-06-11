@@ -10,6 +10,11 @@ import {
   rankThirdPlaceTeams,
 } from "@/lib/tournament/rules";
 import { MAX_PUBLIC_SIMULATIONS } from "@/lib/tournament/constants";
+import {
+  type ChampionPath,
+  extractChampionPath,
+  summarizeTitlePaths,
+} from "@/lib/tournament/title-paths";
 import { resolveRoundOf32PathsWithMetadata } from "@/lib/worldcup-2026/knockout-path-resolver";
 import {
   GROUP_CODES,
@@ -46,6 +51,12 @@ interface SimulateOptions {
   iterations?: number;
   seed?: string;
   ratings?: Map<string, TeamRating>;
+  /**
+   * When true, collect each simulation's champion path during the existing loop
+   * and return modal title runs per team. Off by default so other callers pay
+   * no cost — this never adds a second simulation pass.
+   */
+  collectTitlePaths?: boolean;
 }
 
 interface RoundResult {
@@ -375,6 +386,7 @@ export function runTournamentSimulation({
   iterations = 1000,
   seed = "worldcup-oracle",
   ratings = buildTeamRatings(),
+  collectTitlePaths = false,
 }: SimulateOptions = {}): TournamentSimulationSummary {
   const boundedIterations = Math.max(
     1,
@@ -382,6 +394,7 @@ export function runTournamentSimulation({
   );
   const counters = new Map(teams.map((team) => [team.id, createCounter()]));
   const finalPairCounts = new Map<string, number>();
+  const championPaths: ChampionPath[] = [];
   let firstSimulation: SingleTournamentSimulation | undefined;
   let bracketResolution: BracketResolutionMetadata | undefined;
 
@@ -394,6 +407,10 @@ export function runTournamentSimulation({
 
     if (!bracketResolution) {
       bracketResolution = simulation.bracketResolution;
+    }
+
+    if (collectTitlePaths) {
+      championPaths.push(extractChampionPath(simulation));
     }
 
     addGroupAdvancers(counters, simulation);
@@ -471,6 +488,9 @@ export function runTournamentSimulation({
     teams,
     probabilities,
     qualificationProbabilities,
+    titlePaths: collectTitlePaths
+      ? summarizeTitlePaths(championPaths, boundedIterations)
+      : undefined,
     single: representativeSimulation,
     mostLikelyFinal: {
       teamAId,

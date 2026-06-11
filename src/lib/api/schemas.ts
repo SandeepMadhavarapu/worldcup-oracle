@@ -53,8 +53,19 @@ export const saveBracketRequestSchema = z
     },
   );
 
+export const teamPathRequestSchema = z.object({
+  teamId: z
+    .string()
+    .min(1)
+    .refine((id) => teamIds.has(id), {
+      message: "Unknown team",
+      path: ["teamId"],
+    }),
+});
+
 export type PredictMatchRequest = z.infer<typeof predictMatchRequestSchema>;
 export type SimulateTournamentRequest = z.infer<
   typeof simulateTournamentRequestSchema
 >;
 export type SaveBracketRequest = z.infer<typeof saveBracketRequestSchema>;
+export type TeamPathRequest = z.infer<typeof teamPathRequestSchema>;

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { IntroMount } from "@/components/intro/IntroMount";
 import { PwaRegister } from "@/components/pwa-register";
 import { DatasetBanner, SiteNav } from "@/components/site-nav";
 import { getProviderMode, getProviderNotice } from "@/lib/data";
@@ -53,6 +54,7 @@ export default function RootLayout({
         <SiteNav />
         <DatasetBanner mode={getProviderMode()} notice={getProviderNotice()} />
         {children}
+        <IntroMount />
         <PwaRegister />
       </body>
     </html>

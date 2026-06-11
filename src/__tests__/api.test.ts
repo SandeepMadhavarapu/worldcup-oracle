@@ -3,9 +3,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { GET as calibrationGet } from "@/app/api/calibration/route";
 import { POST as predictMatchPost } from "@/app/api/predict-match/route";
 import { POST as simulateTournamentPost } from "@/app/api/simulate-tournament/route";
+import { GET as teamPathGet } from "@/app/api/team-path/route";
 import { enforceRateLimit, resetRateLimitStoreForTests } from "@/lib/api/rate-limit";
 import type { CalibrationReport } from "@/lib/calibration/types";
 import { MAX_PUBLIC_SIMULATIONS } from "@/lib/tournament/constants";
+import type { TeamPathReport } from "@/lib/tournament/team-path";
 import type { ApiResponse } from "@/lib/types";
 
 async function parse<T>(response: Response): Promise<ApiResponse<T>> {
@@ -188,5 +190,48 @@ describe("api route validation", () => {
       // Deterministic seed -> stable sample size across runs.
       expect(payload.data.report.sampleSize).toBe(90);
     }
+  });
+
+  it("returns a team's upset path from the cached baseline simulation", async () => {
+    const response = await teamPathGet(
+      new Request("http://localhost/api/team-path?teamId=argentina"),
+    );
+    const payload = await parse<{ path: TeamPathReport }>(response);
+
+    expect(response.status).toBe(200);
+    expect(payload.ok).toBe(true);
+
+    if (payload.ok) {
+      const path = payload.data.path;
+      expect(path.teamId).toBe("argentina");
+      expect(path.championProbability).toBeGreaterThanOrEqual(0);
+      expect(path.championProbability).toBeLessThanOrEqual(1);
+      // Winning the title requires reaching the final, so final >= champion.
+      expect(path.finalProbability).toBeGreaterThanOrEqual(
+        path.championProbability,
+      );
+
+      if (path.hasTitleRun) {
+        expect(path.steps.length).toBeGreaterThan(0);
+        expect(path.steps.at(-1)?.round).toBe("Final");
+        expect(path.modalShare).toBeGreaterThan(0);
+        expect(path.modalShare).toBeLessThanOrEqual(1);
+        for (const step of path.steps) {
+          expect(step.opponentName.length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  it("rejects a team-path request with a missing or unknown team", async () => {
+    const missing = await teamPathGet(
+      new Request("http://localhost/api/team-path"),
+    );
+    expect(missing.status).toBe(422);
+
+    const unknown = await teamPathGet(
+      new Request("http://localhost/api/team-path?teamId=atlantis"),
+    );
+    expect(unknown.status).toBe(422);
   });
 });

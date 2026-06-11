@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Activity, BarChart3, FlaskConical, Gauge, Trophy } from "lucide-react";
+import { IntroReplayButton } from "@/components/intro/IntroReplayButton";
 
 export function SiteNav() {
   const links = [
@@ -39,6 +40,7 @@ export function SiteNav() {
             );
           })}
         </nav>
+        <IntroReplayButton />
       </div>
     </header>
   );
