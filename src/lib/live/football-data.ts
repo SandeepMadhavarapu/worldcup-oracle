@@ -146,7 +146,46 @@ export async function fetchWorldCupScores(
   const dateTo = isoDate(current + LIVE_WINDOW_DAYS_FORWARD * 86_400_000);
   const url = `${FOOTBALL_DATA_BASE_URL}/competitions/${WORLD_CUP_COMPETITION}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`;
 
-  // Bound the request so a hanging provider can't hang the route.
+  const json = await requestMatches(url, fetchImpl, apiKey);
+  return orderLiveMatches(normalizeFootballDataMatches(json));
+}
+
+/**
+ * Fetch every FINISHED World Cup match of the current season (not just the
+ * near-now window used by the live strip). This is the resolved-results feed
+ * the calibration page grades against. Throws on any provider/HTTP error so the
+ * caller can fall back to the synthetic illustration. Uses the SAME provider,
+ * base URL, and competition code as {@link fetchWorldCupScores}.
+ */
+export async function fetchFinishedWorldCupMatches(
+  deps: { fetchImpl?: typeof fetch } = {},
+): Promise<LiveMatch[]> {
+  const fetchImpl = deps.fetchImpl ?? fetch;
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Missing FOOTBALL_DATA_API_KEY");
+  }
+
+  const url = `${FOOTBALL_DATA_BASE_URL}/competitions/${WORLD_CUP_COMPETITION}/matches?status=FINISHED`;
+  const json = await requestMatches(url, fetchImpl, apiKey);
+
+  // Defensive: keep only genuinely finished matches even if the provider ignores
+  // the status filter, so we never grade a forecast against an in-play score.
+  return normalizeFootballDataMatches(json).filter(
+    (match) => match.status === "finished",
+  );
+}
+
+/**
+ * Shared football-data GET: auth header, an 8s abort guard so a hanging provider
+ * can't hang the route, and a thrown error on any non-2xx response.
+ */
+async function requestMatches(
+  url: string,
+  fetchImpl: typeof fetch,
+  apiKey: string,
+): Promise<FootballDataMatchesResponse> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
 
@@ -161,8 +200,7 @@ export async function fetchWorldCupScores(
       throw new Error(`football-data responded ${response.status}`);
     }
 
-    const json = (await response.json()) as FootballDataMatchesResponse;
-    return orderLiveMatches(normalizeFootballDataMatches(json));
+    return (await response.json()) as FootballDataMatchesResponse;
   } finally {
     clearTimeout(timeout);
   }

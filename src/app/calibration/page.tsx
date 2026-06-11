@@ -4,13 +4,13 @@ import { Gauge, ScanLine, Sigma, Target } from "lucide-react";
 import { Card, Section, Shell, StatusPill } from "@/components/ui";
 import { ReliabilityDiagram } from "@/app/calibration/reliability-diagram";
 import { buildCalibrationReport } from "@/lib/calibration/calibration";
+import { getCalibrationSource } from "@/lib/calibration/server";
 import { getProviderNotice } from "@/lib/data";
-import { resolvedMatchRepository } from "@/lib/repositories";
 
 export const metadata: Metadata = {
   title: "Calibration | WorldCup Oracle",
   description:
-    "Self-grading reliability diagram and Brier score for the WorldCup Oracle prediction engine, using synthetic resolved matches in Demo Mode.",
+    "Reliability diagram and Brier score for the WorldCup Oracle prediction engine — graded against real World Cup results once matches resolve, and against a clearly-labeled synthetic illustration until then.",
 };
 
 function toPercent(value: number): string {
@@ -18,11 +18,20 @@ function toPercent(value: number): string {
 }
 
 export default async function CalibrationPage() {
-  const resolvedMatches = await resolvedMatchRepository.list();
-  const report = buildCalibrationReport(resolvedMatches);
+  const source = await getCalibrationSource();
+  const report = buildCalibrationReport(source.matches);
   const populatedBuckets = report.buckets.filter((bucket) => bucket.count > 0);
+  const isLive = source.isLive;
 
   const stats = [
+    {
+      icon: ScanLine,
+      label: "Real matches resolved",
+      value: source.resolvedCount.toLocaleString(),
+      detail: isLive
+        ? "Finished World Cup matches graded from the live feed."
+        : "None yet — the diagram below is an illustration until the first match finishes.",
+    },
     {
       icon: Sigma,
       label: "Brier score",
@@ -30,14 +39,8 @@ export default async function CalibrationPage() {
       detail: "Multi-class, win/draw/loss. 0 is perfect, 2 is worst.",
     },
     {
-      icon: ScanLine,
-      label: "Resolved matches",
-      value: report.sampleSize.toLocaleString(),
-      detail: "Synthetic graded forecasts in the current sample.",
-    },
-    {
       icon: Target,
-      label: "Pooled forecasts",
+      label: "Graded forecasts",
       value: report.forecastCount.toLocaleString(),
       detail: "Three class forecasts per match across the diagram.",
     },
@@ -47,16 +50,66 @@ export default async function CalibrationPage() {
     <Shell>
       <Section className="bg-[#0b1712]">
         <div className="max-w-3xl">
-          <StatusPill tone="amber">Self-Grading · Demo Mode</StatusPill>
+          <StatusPill tone={isLive ? "emerald" : "amber"}>
+            {isLive ? "Live Accuracy · Real Results" : "Illustrative · No Real Matches Yet"}
+          </StatusPill>
           <h1 className="mt-5 text-4xl font-semibold tracking-normal text-white sm:text-5xl">
             Calibration
           </h1>
           <p className="mt-4 text-base leading-8 text-zinc-400">
             Calibration checks whether the model&apos;s stated confidence matches
             reality: of all the forecasts made at <em>X%</em>, did about{" "}
-            <em>X%</em> actually happen? The reliability diagram below grades the
-            engine against its own resolved forecasts.
+            <em>X%</em> actually happen? {isLive
+              ? "The reliability diagram below grades the engine against real, finished World Cup results."
+              : "Until real matches resolve, the diagram below is a labeled illustration — it switches to real results automatically as the tournament plays out."}
           </p>
+        </div>
+      </Section>
+
+      {/* The prominent, unmistakable source banner — this is how the page visibly
+          comes alive as matches resolve. */}
+      <Section className="pb-0">
+        <div
+          className={`flex flex-col gap-3 rounded-xl border p-5 sm:flex-row sm:items-center sm:justify-between ${
+            isLive
+              ? "border-emerald-300/30 bg-emerald-300/10"
+              : "border-amber-300/25 bg-amber-300/10"
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <span
+              className={`grid size-12 place-items-center rounded-lg text-xl font-bold tabular-nums ${
+                isLive
+                  ? "bg-emerald-300/15 text-emerald-100"
+                  : "bg-amber-300/15 text-amber-100"
+              }`}
+            >
+              {source.resolvedCount}
+            </span>
+            <div>
+              <p
+                className={`text-base font-semibold ${
+                  isLive ? "text-emerald-100" : "text-amber-100"
+                }`}
+              >
+                {source.label}
+              </p>
+              <p className="mt-0.5 text-sm leading-6 text-zinc-300/80">
+                {isLive
+                  ? "Real finished World Cup matches grading the model right now."
+                  : "Real resolved World Cup matches. The count climbs as games finish."}
+              </p>
+            </div>
+          </div>
+          <span
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
+              isLive
+                ? "bg-emerald-400/15 text-emerald-100"
+                : "bg-amber-400/15 text-amber-100"
+            }`}
+          >
+            {isLive ? "Live · real results" : "Illustrative · synthetic"}
+          </span>
         </div>
       </Section>
 
@@ -165,20 +218,17 @@ export default async function CalibrationPage() {
           </Card>
           <Card className="p-6">
             <div className="flex items-center gap-3">
-              <Target className="size-6 text-amber-200" aria-hidden="true" />
-              <h2 className="text-xl font-semibold text-white">Honest data note</h2>
+              <Target
+                className={`size-6 ${isLive ? "text-emerald-200" : "text-amber-200"}`}
+                aria-hidden="true"
+              />
+              <h2 className="text-xl font-semibold text-white">
+                {isLive ? "Where these numbers come from" : "Honest data note"}
+              </h2>
             </div>
             <div className="mt-4 space-y-4 text-sm leading-7 text-zinc-400">
               <p>{getProviderNotice()}</p>
-              <p>
-                These resolved matches are <strong>synthetic</strong>: each is
-                forecast by the real engine, then its outcome is sampled from
-                that same forecast distribution with a fixed seed. The set is
-                deterministic and renders offline, and is calibrated by
-                construction — so it illustrates what good calibration looks
-                like rather than proving real-world accuracy. No live scores, no
-                official FIFA data, not betting advice.
-              </p>
+              <p>{source.note}</p>
             </div>
           </Card>
         </div>

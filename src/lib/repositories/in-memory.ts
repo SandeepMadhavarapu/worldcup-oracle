@@ -1,5 +1,5 @@
 import { DATASET_MODE } from "@/lib/data";
-import { getDemoResolvedMatches } from "@/lib/calibration/demo-data";
+import { getLiveResolvedMatches } from "@/lib/calibration/live-results-service";
 import type { LeaderboardEntry } from "@/lib/types";
 import type {
   BracketRepository,
@@ -104,7 +104,11 @@ export const inMemorySimulationRepository: SimulationRepository = {
 
 export const inMemoryResolvedMatchRepository: ResolvedMatchRepository = {
   async list() {
-    // Deterministic synthetic set so the calibration page renders offline.
-    return getDemoResolvedMatches();
+    // REAL resolved matches graded from the live football-data.org feed (cached).
+    // Empty until the tournament produces FINISHED matches, or when no live
+    // provider key is configured. The calibration layer falls back to the
+    // clearly-labeled synthetic illustration in that case — the two are never
+    // mixed.
+    return getLiveResolvedMatches();
   },
 };

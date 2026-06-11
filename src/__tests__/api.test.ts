@@ -173,6 +173,9 @@ describe("api route validation", () => {
     const response = await calibrationGet();
     const payload = await parse<{
       synthetic: boolean;
+      source: string;
+      resolvedCount: number;
+      label: string;
       report: CalibrationReport;
     }>(response);
 
@@ -180,7 +183,14 @@ describe("api route validation", () => {
     expect(payload.ok).toBe(true);
 
     if (payload.ok) {
+      // No live provider key in the test env, so the route falls back to the
+      // clearly-labeled synthetic illustration — never silently mixed.
       expect(payload.data.synthetic).toBe(true);
+      expect(payload.data.source).toBe("illustrative");
+      expect(payload.data.resolvedCount).toBe(0);
+      expect(payload.data.label).toBe(
+        "Illustrative — no real matches resolved yet",
+      );
       expect(payload.data.report.buckets).toHaveLength(10);
       expect(payload.data.report.sampleSize).toBeGreaterThan(0);
       expect(payload.data.report.brierScore).not.toBeNull();
