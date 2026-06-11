@@ -103,6 +103,24 @@ Provider modes:
 
 The current app never fakes live scores, never presents sample data as official, and is not betting advice.
 
+## Near-Live Scores
+
+An optional near-live score ticker (`LiveScoreStrip`) polls `GET /api/live` every
+45 seconds, diffs the score, and flashes a subtle emerald "GOAL" pulse when a
+score changes (honoring `prefers-reduced-motion`). It shows kickoff times for
+upcoming matches and final scores for finished ones, and is labeled honestly as
+**"Near-live, ~45s refresh"** — it does not imply instant updates. The existing
+dataset-mode banner is unchanged.
+
+- Provider: **football-data.org, FREE tier only** (no paid API). Get a key at
+  <https://www.football-data.org/client/register>.
+- Enable with `LIVE_DATA_PROVIDER=football-data` and `FOOTBALL_DATA_API_KEY=<key>`.
+- `GET /api/live` caches results **in memory for 45 seconds**, so the provider is
+  called at most once per window no matter how many clients poll — keeping us
+  comfortably under the free-tier rate limit.
+- Without a key, or on any provider error, the strip degrades gracefully to a
+  clearly-labeled "scores unavailable" state and never crashes the page.
+
 ## 2026 Tournament Data Layer
 
 `data/worldcup-2026` is a separate official-data-ready layer for:
@@ -133,6 +151,7 @@ Routes:
 - `POST /api/simulate-tournament`
 - `POST /api/save-bracket`
 - `GET /api/leaderboard`
+- `GET /api/live` (near-live World Cup scores, cached 45s)
 
 POST routes use Zod validation and a safer in-memory demo rate-limit helper. The limiter does not trust arbitrary `X-Forwarded-For` by itself, but it is still per-process. Public production should move rate-limit buckets to a shared store such as Upstash Redis, Vercel KV, Supabase, or another managed data store.
 
@@ -174,6 +193,11 @@ FOOTBALL_DATA_API_KEY=
 API_FOOTBALL_KEY=
 DATABASE_URL=
 ```
+
+`FOOTBALL_DATA_API_KEY` is the football-data.org **free-tier** key that powers
+near-live scores. Pair it with `LIVE_DATA_PROVIDER=football-data` to enable the
+live ticker; leave both unset to stay in the offline dataset mode. See
+[Near-Live Scores](#near-live-scores).
 
 Do not expose provider keys through `NEXT_PUBLIC_*`.
 Set `NEXT_PUBLIC_SITE_URL` to the deployed public origin before a public portfolio launch. If it is missing, metadata falls back to Vercel's deployment URL when available, then `http://localhost:3000` for local development.

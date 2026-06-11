@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IntroMount } from "@/components/intro/IntroMount";
+import { LiveScoreStrip } from "@/components/live-score-strip";
 import { PwaRegister } from "@/components/pwa-register";
 import { DatasetBanner, SiteNav } from "@/components/site-nav";
 import { getProviderMode, getProviderNotice } from "@/lib/data";
@@ -53,6 +54,7 @@ export default function RootLayout({
       <body className="min-h-full bg-[#07100d] text-zinc-100">
         <SiteNav />
         <DatasetBanner mode={getProviderMode()} notice={getProviderNotice()} />
+        <LiveScoreStrip />
         {children}
         <IntroMount />
         <PwaRegister />
