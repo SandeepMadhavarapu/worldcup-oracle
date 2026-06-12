@@ -121,7 +121,7 @@ export default async function CalibrationPage() {
             return (
               <Card key={item.label} className="p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
                     {item.label}
                   </p>
                   <span className="grid size-9 place-items-center rounded-md border border-emerald-300/20 bg-emerald-300/10 text-emerald-200">
@@ -158,13 +158,13 @@ export default async function CalibrationPage() {
           <Card className="overflow-hidden">
             <div className="border-b border-white/10 p-5">
               <h2 className="text-lg font-semibold text-white">Per-Bucket Detail</h2>
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 text-sm text-zinc-400">
                 The same data behind the diagram, as a table.
               </p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[360px] text-left text-sm">
-                <thead className="text-xs uppercase tracking-[0.12em] text-zinc-500">
+                <thead className="text-xs uppercase tracking-[0.12em] text-zinc-400">
                   <tr>
                     <th className="px-5 py-3">Bucket</th>
                     <th className="px-3 py-3">Predicted</th>

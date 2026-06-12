@@ -3,12 +3,25 @@
 import { useEffect, useRef, useState } from "react";
 import { Clock, Radio } from "lucide-react";
 
+import { Skeleton } from "@/components/ui";
 import { LIVE_REFRESH_SECONDS } from "@/lib/live/constants";
 import { detectScoreChanges } from "@/lib/live/diff";
 import type { LiveMatch, LiveScoresPayload } from "@/lib/live/types";
 import type { ApiResponse } from "@/lib/types";
 
 const GOAL_FLASH_MS = 6000;
+
+function LoadingChips() {
+  // Placeholder chips so the strip reserves space instead of popping in once the
+  // first poll resolves. Decorative — the region carries aria-busy for SR.
+  return (
+    <ul aria-hidden="true" className="flex items-center gap-2 overflow-hidden">
+      {[0, 1, 2, 3, 4].map((index) => (
+        <Skeleton key={index} className="h-7 w-28 shrink-0" />
+      ))}
+    </ul>
+  );
+}
 
 function kickoffLabel(utcDate: string): string {
   const time = Date.parse(utcDate);
@@ -64,7 +77,7 @@ function MatchChip({ match, goal }: { match: LiveMatch; goal: boolean }) {
           {match.minute ? `${match.minute}'` : "Live"}
         </span>
       ) : isFinished ? (
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
           FT
         </span>
       ) : null}
@@ -138,6 +151,7 @@ export function LiveScoreStrip() {
   return (
     <section
       aria-label="Near-live World Cup scores"
+      aria-busy={loading}
       className="border-b border-white/10 bg-[#081310]"
     >
       <div className="mx-auto flex w-full max-w-7xl items-center gap-4 px-4 py-2 sm:px-6 lg:px-8">
@@ -147,15 +161,20 @@ export function LiveScoreStrip() {
         </span>
 
         {loading ? (
-          <span className="text-xs text-zinc-500">Checking for matches…</span>
+          <>
+            <span className="sr-only" role="status">
+              Checking for World Cup matches…
+            </span>
+            <LoadingChips />
+          </>
         ) : unavailable ? (
-          <span className="truncate text-xs text-zinc-500">
+          <span className="truncate text-xs text-zinc-400">
             Scores unavailable —{" "}
             {payload?.reason ??
               "live provider not configured. The offline dataset stays available."}
           </span>
         ) : matches.length === 0 ? (
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-zinc-400">
             No World Cup matches in the current window.
           </span>
         ) : (

@@ -70,7 +70,15 @@ export function ReliabilityDiagram({
     }));
 
   return (
-    <div className="h-[420px] min-h-[420px] min-w-0 w-full">
+    <div
+      className="h-[420px] min-h-[420px] min-w-0 w-full"
+      role="img"
+      aria-label={
+        points.length === 0
+          ? "Reliability diagram: no populated forecast buckets yet."
+          : `Reliability diagram plotting predicted probability against observed frequency across ${points.length} populated forecast buckets. The full values are listed in the per-bucket detail table beside this chart.`
+      }
+    >
       <ResponsiveContainer
         width="100%"
         height="100%"

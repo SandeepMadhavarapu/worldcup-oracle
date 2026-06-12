@@ -24,7 +24,7 @@ export function ShareBracket() {
       type="button"
       onClick={copyLink}
       aria-live="polite"
-      className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-emerald-300 px-5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-200"
+      className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-emerald-300 px-5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-200 active:scale-[0.98] motion-reduce:active:scale-100"
     >
       {copied ? (
         <Check className="size-4" aria-hidden="true" />

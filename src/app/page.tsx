@@ -63,14 +63,17 @@ export default function Home() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/dashboard"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-emerald-300 px-5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-200"
+                className="group inline-flex h-12 items-center justify-center gap-2 rounded-md bg-emerald-300 px-5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-200 active:scale-[0.98] motion-reduce:active:scale-100"
               >
                 Simulate bracket
-                <ArrowRight className="size-4" aria-hidden="true" />
+                <ArrowRight
+                  className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none"
+                  aria-hidden="true"
+                />
               </Link>
               <Link
                 href="/model-lab"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-white/15 bg-white/10 px-5 text-sm font-semibold text-white transition hover:bg-white/15"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-white/15 bg-white/10 px-5 text-sm font-semibold text-white transition hover:bg-white/15 active:scale-[0.98] motion-reduce:active:scale-100"
               >
                 Model transparency
                 <BrainCircuit className="size-4" aria-hidden="true" />
@@ -215,7 +218,7 @@ export default function Home() {
               className="rounded-lg border border-white/10 bg-white/[0.05] p-5"
             >
               <Icon className="size-5 text-amber-200" aria-hidden="true" />
-              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+              <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
                 {item.label}
               </p>
               <p className="mt-2 text-xl font-semibold text-white">{item.value}</p>

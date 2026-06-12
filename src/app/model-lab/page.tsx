@@ -100,7 +100,7 @@ export default function ModelLabPage() {
             </div>
             <dl className="mt-5 grid gap-4">
               <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-                <dt className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+                <dt className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                   Historical rows
                 </dt>
                 <dd className="mt-1 text-2xl font-semibold text-white">
@@ -108,13 +108,13 @@ export default function ModelLabPage() {
                 </dd>
               </div>
               <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-                <dt className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+                <dt className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                   Live provider
                 </dt>
                 <dd className="mt-1 text-2xl font-semibold text-white">none</dd>
               </div>
               <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-                <dt className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+                <dt className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                   Betting advice
                 </dt>
                 <dd className="mt-1 text-2xl font-semibold text-white">never</dd>
@@ -134,7 +134,7 @@ export default function ModelLabPage() {
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+              <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                 Evaluable sample rows
               </p>
               <p className="mt-1 text-2xl font-semibold text-white">
@@ -142,7 +142,7 @@ export default function ModelLabPage() {
               </p>
             </div>
             <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+              <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                 Log loss
               </p>
               <p className="mt-1 text-2xl font-semibold text-white">
@@ -150,7 +150,7 @@ export default function ModelLabPage() {
               </p>
             </div>
             <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+              <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                 Brier score
               </p>
               <p className="mt-1 text-2xl font-semibold text-white">

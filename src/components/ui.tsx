@@ -114,6 +114,24 @@ export function StatusPill({
   );
 }
 
+export function Skeleton({
+  className,
+  rounded = "rounded-md",
+}: {
+  className?: string;
+  rounded?: string;
+}) {
+  // Decorative placeholder while data loads. Hidden from assistive tech — the
+  // surrounding surface owns the accessible "loading" status (aria-busy / a
+  // visually-hidden message) so screen readers aren't spammed with empty boxes.
+  return (
+    <div
+      aria-hidden="true"
+      className={clsx("skeleton", rounded, className)}
+    />
+  );
+}
+
 export function ProbabilityBar({
   value,
   className,

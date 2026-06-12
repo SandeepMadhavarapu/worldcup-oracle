@@ -127,12 +127,66 @@ input {
   }
 }
 
+/* One consistent, high-contrast focus ring on every natively focusable element
+   plus anything that opts in with [role="tab"] / [tabindex]. The cyan ring
+   meets WCAG 2.4.11 (focus appearance) against the dark canvas. */
 button:focus-visible,
 a:focus-visible,
 select:focus-visible,
-input:focus-visible {
+input:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible,
+[role="tab"]:focus-visible,
+[role="button"]:focus-visible {
   outline: 2px solid #67e8f9;
   outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Visually hidden but available to assistive tech (e.g. live-region status,
+   tab-panel labels). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skeleton shimmer for loading surfaces. The base is a static muted block so it
+   still reads as "loading" under reduced motion; the sweep is added only when
+   motion is allowed. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.08),
+      transparent
+    );
+    animation: skeleton-sweep 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes skeleton-sweep {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

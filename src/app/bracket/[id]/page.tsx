@@ -96,7 +96,7 @@ export default async function BracketPage({
           <Card className="p-5">
             <div className="flex items-center gap-3">
               <Trophy className="size-5 text-amber-200" aria-hidden="true" />
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-500">
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">
                 Champion probability
               </p>
             </div>
@@ -113,7 +113,7 @@ export default async function BracketPage({
       <Section>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
               Champion pick
             </p>
             <div className="mt-4 flex items-center gap-4">
@@ -133,7 +133,7 @@ export default async function BracketPage({
           </Card>
 
           <Card className="p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
               Finalist pick
             </p>
             <div className="mt-4 flex items-center gap-4">
@@ -150,7 +150,7 @@ export default async function BracketPage({
           </Card>
         </div>
 
-        <p className="mt-6 max-w-3xl text-sm leading-7 text-zinc-500">
+        <p className="mt-6 max-w-3xl text-sm leading-7 text-zinc-400">
           {getProviderNotice()} Not official FIFA data. Not betting advice.
         </p>
       </Section>

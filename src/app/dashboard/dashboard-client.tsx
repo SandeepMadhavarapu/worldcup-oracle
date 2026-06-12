@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -122,13 +122,13 @@ function SelectTeam({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
         {label}
       </span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-12 w-full rounded-md border border-white/10 bg-[#0d1a15] px-3 text-sm text-white outline-none transition hover:border-emerald-300/40"
+        className="h-12 w-full rounded-md border border-white/10 bg-[#0d1a15] px-3 text-sm text-white transition hover:border-emerald-300/40"
       >
         {teams.map((team) => (
           <option key={team.id} value={team.id}>
@@ -174,6 +174,43 @@ export function DashboardClient({
   const [isSaving, setIsSaving] = useState(false);
   const [isPending, startTransition] = useTransition();
   const shouldReduceMotion = useReducedMotion();
+  const tabListRef = useRef<HTMLDivElement>(null);
+
+  // Roving-focus keyboard support for the tablist (WAI-ARIA tabs pattern):
+  // arrow keys move and activate, Home/End jump to the ends.
+  function focusTabAt(index: number) {
+    const count = tabs.length;
+    const nextIndex = (index + count) % count;
+    setActiveTab(tabs[nextIndex].id);
+    const buttons =
+      tabListRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    buttons?.[nextIndex]?.focus();
+  }
+
+  function onTabKeyDown(event: React.KeyboardEvent, index: number) {
+    switch (event.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        event.preventDefault();
+        focusTabAt(index + 1);
+        break;
+      case "ArrowLeft":
+      case "ArrowUp":
+        event.preventDefault();
+        focusTabAt(index - 1);
+        break;
+      case "Home":
+        event.preventDefault();
+        focusTabAt(0);
+        break;
+      case "End":
+        event.preventDefault();
+        focusTabAt(tabs.length - 1);
+        break;
+      default:
+        break;
+    }
+  }
 
   const teamMap = useMemo(
     () => new Map(teams.map((team) => [team.id, team])),
@@ -291,7 +328,7 @@ export function DashboardClient({
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             <Card className="p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+              <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                 Simulations
               </p>
               <p className="mt-2 text-2xl font-semibold text-white">
@@ -299,7 +336,7 @@ export function DashboardClient({
               </p>
             </Card>
             <Card className="p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+              <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                 Favorite
               </p>
               <p className="mt-2 text-2xl font-semibold text-white">
@@ -307,7 +344,7 @@ export function DashboardClient({
               </p>
             </Card>
             <Card className="p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+              <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                 Final Pair
               </p>
               <p className="mt-2 text-sm font-semibold leading-6 text-white">
@@ -319,8 +356,14 @@ export function DashboardClient({
       </Section>
 
       <Section className="py-6">
-        <div className="flex gap-2 overflow-x-auto rounded-lg border border-white/10 bg-white/[0.045] p-2">
-          {tabs.map((tab) => {
+        <div
+          ref={tabListRef}
+          role="tablist"
+          aria-label="Dashboard views"
+          aria-orientation="horizontal"
+          className="flex gap-2 overflow-x-auto rounded-lg border border-white/10 bg-white/[0.045] p-2"
+        >
+          {tabs.map((tab, index) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
 
@@ -328,8 +371,14 @@ export function DashboardClient({
               <button
                 key={tab.id}
                 type="button"
+                role="tab"
+                id={`tab-${tab.id}`}
+                aria-selected={isActive}
+                aria-controls={`panel-${tab.id}`}
+                tabIndex={isActive ? 0 : -1}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex h-11 min-w-fit items-center gap-2 rounded-md px-4 text-sm font-semibold transition ${
+                onKeyDown={(event) => onTabKeyDown(event, index)}
+                className={`flex h-11 min-w-fit items-center gap-2 rounded-md px-4 text-sm font-semibold transition active:scale-[0.98] motion-reduce:active:scale-100 ${
                   isActive
                     ? "bg-emerald-300 text-emerald-950"
                     : "text-zinc-300 hover:bg-white/10 hover:text-white"
@@ -393,7 +442,7 @@ export function DashboardClient({
             return (
               <Card key={item.label} className="p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
                     {item.label}
                   </p>
                   <span
@@ -425,9 +474,14 @@ export function DashboardClient({
       <Section className="pt-0">
         <motion.div
           key={activeTab}
+          id={`panel-${activeTab}`}
+          role="tabpanel"
+          aria-labelledby={`tab-${activeTab}`}
+          tabIndex={0}
           initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: shouldReduceMotion ? 0 : 0.25 }}
+          className="rounded-lg"
         >
           {activeTab === "groups" ? (
             <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
@@ -443,7 +497,7 @@ export function DashboardClient({
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full min-w-[420px] text-left text-sm">
-                          <thead className="text-xs uppercase tracking-[0.12em] text-zinc-500">
+                          <thead className="text-xs uppercase tracking-[0.12em] text-zinc-400">
                             <tr>
                               <th className="px-4 py-3">Team</th>
                               <th className="px-2 py-3">Pts</th>
@@ -498,7 +552,7 @@ export function DashboardClient({
                         <p className="font-semibold text-white">
                           {index + 1}. {getTeamName(row.teamId)}
                         </p>
-                        <p className="text-xs text-zinc-500">
+                        <p className="text-xs text-zinc-400">
                           Group {row.group} | {row.points} pts | GD{" "}
                           {row.goalDifference > 0 ? "+" : ""}
                           {row.goalDifference}
@@ -539,7 +593,7 @@ export function DashboardClient({
                     onClick={runPrediction}
                     disabled={isPredicting || teamAId === teamBId}
                     aria-busy={isPredicting}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-55"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-200 active:scale-[0.98] motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100"
                   >
                     {isPredicting ? (
                       <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -605,13 +659,13 @@ export function DashboardClient({
                               key={factor.label}
                               className="rounded-md border border-white/10 bg-white/[0.04] p-3"
                             >
-                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">
                                 {factor.label}
                               </p>
                               <p className="mt-1 font-semibold text-white">
                                 {factor.value}
                               </p>
-                              <p className="mt-1 text-xs leading-5 text-zinc-500">
+                              <p className="mt-1 text-xs leading-5 text-zinc-400">
                                 {factor.note}
                               </p>
                             </div>
@@ -620,7 +674,7 @@ export function DashboardClient({
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">
                         Scoreline distribution
                       </h3>
                       <div className="mt-4 space-y-3">
@@ -643,17 +697,25 @@ export function DashboardClient({
                           </div>
                         ))}
                       </div>
-                      <p className="mt-5 text-sm leading-6 text-zinc-500">
+                      <p className="mt-5 text-sm leading-6 text-zinc-400">
                         {prediction.uncertainty}
                       </p>
                     </div>
                   </div>
                 ) : (
                   <div className="grid min-h-[420px] place-items-center text-center">
-                    <div>
-                      <Sparkles className="mx-auto size-10 text-emerald-200" />
+                    <div className="max-w-xs">
+                      <Sparkles
+                        className="mx-auto size-10 text-emerald-200"
+                        aria-hidden="true"
+                      />
                       <p className="mt-4 text-lg font-semibold text-white">
                         Select two teams to generate an explainable prediction.
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-zinc-400">
+                        Pick from the dropdowns on the left, then run the model to
+                        see win, draw, and loss probabilities with a plain-English
+                        rationale.
                       </p>
                     </div>
                   </div>
@@ -671,7 +733,7 @@ export function DashboardClient({
                       <h2 className="text-lg font-semibold text-white">
                         Monte Carlo Simulator
                       </h2>
-                      <p className="mt-1 text-sm text-zinc-500">
+                      <p className="mt-1 text-sm text-zinc-400">
                         Current run: {simulation.metadata.simulationCount.toLocaleString()} iterations
                         | seed {simulation.metadata.seed}
                       </p>
@@ -684,7 +746,8 @@ export function DashboardClient({
                           onClick={() => runSimulation(count)}
                           disabled={isSimulating}
                           aria-busy={isSimulating}
-                          className="inline-flex h-10 items-center gap-2 rounded-md border border-white/10 bg-white/10 px-3 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-55"
+                          aria-label={`Run ${count.toLocaleString()} Monte Carlo simulations`}
+                          className="inline-flex h-11 items-center gap-2 rounded-md border border-white/10 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15 active:scale-[0.98] motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-55"
                         >
                           {isPending || isSimulating ? (
                             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -704,7 +767,21 @@ export function DashboardClient({
                       Champion Probability
                     </h2>
                   </div>
-                  <div className="mt-5 h-[320px] min-h-[320px] min-w-0">
+                  <div className="relative mt-5 h-[320px] min-h-[320px] min-w-0">
+                    {isSimulating ? (
+                      <div
+                        className="absolute inset-0 z-10 grid place-items-center rounded-md bg-[#0b1712]/70 backdrop-blur-sm"
+                        role="status"
+                      >
+                        <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-100">
+                          <Loader2
+                            className="size-4 animate-spin"
+                            aria-hidden="true"
+                          />
+                          Simulating tournament…
+                        </span>
+                      </div>
+                    ) : null}
                     <ResponsiveContainer
                       width="100%"
                       height="100%"
@@ -735,13 +812,13 @@ export function DashboardClient({
                     <h2 className="text-lg font-semibold text-white">
                       Round Probability Table
                     </h2>
-                    <p className="mt-1 text-sm text-zinc-500">
+                    <p className="mt-1 text-sm text-zinc-400">
                       Top teams by title probability, with deep-run probabilities.
                     </p>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[520px] text-left text-sm">
-                      <thead className="text-xs uppercase tracking-[0.12em] text-zinc-500">
+                      <thead className="text-xs uppercase tracking-[0.12em] text-zinc-400">
                         <tr>
                           <th className="px-5 py-3">Team</th>
                           <th className="px-3 py-3">QF</th>
@@ -790,7 +867,7 @@ export function DashboardClient({
                           </span>
                         </div>
                         <ProbabilityBar value={row.groupAdvance} />
-                        <p className="mt-1 text-xs text-zinc-500">
+                        <p className="mt-1 text-xs text-zinc-400">
                           Top-two {pct(row.topTwo)} | best third {pct(row.bestThirdPlace)}
                         </p>
                       </div>
@@ -803,14 +880,14 @@ export function DashboardClient({
                   <h2 className="text-lg font-semibold text-white">
                     Interactive Bracket Path
                   </h2>
-                  <p className="mt-1 text-sm text-zinc-500">
+                  <p className="mt-1 text-sm text-zinc-400">
                     Single seeded tournament path from the latest simulation run.
                   </p>
                 </div>
                 <div className="grid gap-4 overflow-x-auto p-5 lg:grid-cols-3">
                   {simulation.single.bracket.map((round) => (
                     <div key={round.name} className="min-w-[260px]">
-                      <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                      <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">
                         {round.name}
                       </h3>
                       <div className="space-y-3">
@@ -879,12 +956,12 @@ export function DashboardClient({
                   <h2 className="text-2xl font-semibold text-white">
                     {focusTeam.name}
                   </h2>
-                  <p className="mt-1 text-sm text-zinc-500">
+                  <p className="mt-1 text-sm text-zinc-400">
                     {focusTeam.confederation} | Group {focusTeam.group}
                   </p>
                   <div className="mt-5 grid grid-cols-2 gap-3">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+                      <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                         Rating
                       </p>
                       <p className="mt-1 text-xl font-semibold text-white">
@@ -892,7 +969,7 @@ export function DashboardClient({
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+                      <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                         Form
                       </p>
                       <p className="mt-1 text-xl font-semibold text-white">
@@ -900,7 +977,7 @@ export function DashboardClient({
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+                      <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                         Attack
                       </p>
                       <p className="mt-1 text-xl font-semibold text-white">
@@ -908,7 +985,7 @@ export function DashboardClient({
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
+                      <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                         Defense
                       </p>
                       <p className="mt-1 text-xl font-semibold text-white">
@@ -918,7 +995,7 @@ export function DashboardClient({
                   </div>
                   <Link
                     href={`/teams/${focusTeam.id}`}
-                    className="mt-5 inline-flex h-10 items-center justify-center rounded-md border border-white/10 px-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                    className="mt-5 inline-flex h-11 items-center justify-center rounded-md border border-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] motion-reduce:active:scale-100"
                   >
                     Full team page
                   </Link>
@@ -963,19 +1040,19 @@ export function DashboardClient({
                     Prediction Game
                   </h2>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
+                <p className="mt-2 text-sm leading-6 text-zinc-400">
                   Demo Mode only. Saved entries and bracket links are temporary
                   until a database adapter is wired.
                 </p>
                 <div className="mt-5 grid gap-4">
                   <label>
-                    <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                    <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
                       Display name
                     </span>
                     <input
                       value={playerName}
                       onChange={(event) => setPlayerName(event.target.value)}
-                      className="h-12 w-full rounded-md border border-white/10 bg-[#0d1a15] px-3 text-sm text-white outline-none"
+                      className="h-12 w-full rounded-md border border-white/10 bg-[#0d1a15] px-3 text-sm text-white transition hover:border-emerald-300/40"
                     />
                   </label>
                   <SelectTeam
@@ -995,7 +1072,7 @@ export function DashboardClient({
                     onClick={saveBracket}
                     disabled={isSaving}
                     aria-busy={isSaving}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-55"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-200 active:scale-[0.98] motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100"
                   >
                     {isSaving ? (
                       <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -1023,7 +1100,7 @@ export function DashboardClient({
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[620px] text-left text-sm">
-                    <thead className="text-xs uppercase tracking-[0.12em] text-zinc-500">
+                    <thead className="text-xs uppercase tracking-[0.12em] text-zinc-400">
                       <tr>
                         <th className="px-5 py-3">Rank</th>
                         <th className="px-5 py-3">User</th>

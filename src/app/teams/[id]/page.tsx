@@ -80,7 +80,7 @@ export default async function TeamPage({
             />
             <div className="flex items-center gap-3">
               <Trophy className="size-5 text-amber-200" aria-hidden="true" />
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-500">
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">
                 Champion probability
               </p>
             </div>
@@ -107,7 +107,7 @@ export default async function TeamPage({
                   key={label}
                   className="flex items-center justify-between border-b border-white/10 pb-3"
                 >
-                  <dt className="text-sm text-zinc-500">{label}</dt>
+                  <dt className="text-sm text-zinc-400">{label}</dt>
                   <dd className="font-semibold text-white">{value}</dd>
                 </div>
               ))}
@@ -158,7 +158,7 @@ export default async function TeamPage({
                 of sims; most common title run:{" "}
                 <span className="text-white">{readableRun}</span>.
               </p>
-              <p className="mt-3 text-sm leading-7 text-zinc-500">
+              <p className="mt-3 text-sm leading-7 text-zinc-400">
                 Wins the title in{" "}
                 {(pathReport.championProbability * 100).toFixed(1)}% of sims.
                 This exact opponent sequence recurred in{" "}
