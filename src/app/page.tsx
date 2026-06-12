@@ -12,13 +12,26 @@ import {
   Zap,
 } from "lucide-react";
 
-import { getProviderNotice, historicalResults, teamById, teams } from "@/lib/data";
+import {
+  getProviderMode,
+  getProviderNotice,
+  historicalResults,
+  teamById,
+  teams,
+} from "@/lib/data";
 import { buildTeamRatings } from "@/lib/prediction/elo";
 import { runTournamentSimulation } from "@/lib/tournament/simulator";
 import { MetricCard, Section, Shell, StatusPill } from "@/components/ui";
 import heroImage from "../../public/images/stadium-oracle-hero.webp";
 
+const providerModePills = {
+  LIVE_PROVIDER_MODE: { label: "Live Provider Connected", tone: "emerald" },
+  OFFLINE_DATASET_MODE: { label: "Offline Dataset Mode", tone: "amber" },
+  SAMPLE_DATASET_MODE: { label: "Sample Dataset Mode", tone: "cyan" },
+} as const;
+
 export default function Home() {
+  const modePill = providerModePills[getProviderMode()];
   const ratings = buildTeamRatings();
   const simulation = runTournamentSimulation({
     iterations: 250,
@@ -51,7 +64,7 @@ export default function Home() {
         />
         <div className="relative z-10 mx-auto flex min-h-[86svh] w-full max-w-7xl items-center px-4 py-16 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <StatusPill tone="cyan">Offline Dataset Mode</StatusPill>
+            <StatusPill tone={modePill.tone}>{modePill.label}</StatusPill>
             <h1 className="mt-6 max-w-3xl text-5xl font-semibold leading-[1.03] tracking-normal text-white sm:text-7xl">
               WorldCup Oracle
             </h1>

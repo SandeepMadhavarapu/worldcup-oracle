@@ -27,12 +27,14 @@ See `public/screenshots/README.md` for polished captions and capture guidance.
 ## Features
 
 - Premium dark-mode sports intelligence UI with responsive dashboard tabs.
+- Cinematic CSS/SVG intro over an optimized generic stadium backdrop (WebP
+  derived from ignored raw masters) — no real player likenesses or marks.
 - Match predictor with win/draw/loss probabilities, expected goals, scoreline distribution, confidence, and "why this prediction" factors.
 - 48-team World Cup structure: 12 groups of 4, top two advance, 8 best third-place teams, Round of 32 through final.
 - Monte Carlo simulator with public-demo-safe 1, 500, and 1,000 iteration controls.
 - Champion Probability, Most Likely Final, Dark Horse Detector, Upset Risk, Group Chaos Meter, Model Confidence, and Third-Place Bubble sections.
 - Team intelligence pages with rating, form, attack, defense, and round probabilities.
-- Demo prediction game and leaderboard clearly labeled as temporary in-memory Demo Mode.
+- Demo prediction game and model-aligned placeholder leaderboard clearly labeled as temporary in-memory Demo Mode.
 - PWA manifest, service worker shell caching, metadata, sitemap, and robots file.
 - PostgreSQL/Supabase-ready schema with RLS notes.
 - Official-data-ready 2026 tournament dataset structure with source notes and honest placeholder labels.
@@ -58,7 +60,7 @@ src/lib/data            Sample teams, historical importer, provider-mode detecti
 src/lib/prediction      Elo updates, score probabilities, backtesting scaffold
 src/lib/tournament      Group standings, third-place ranking, simulation engine
 src/lib/leaderboard     Demo in-memory leaderboard
-src/lib/repositories    Persistence abstraction with in-memory and Postgres-ready adapters
+src/lib/repositories    Persistence abstraction with the current in-memory adapter
 data/sample             Local sample historical results
 data/worldcup-2026      Official-data-ready fixtures, groups, venues, paths, notes
 database/schema.sql     Postgres/Supabase-ready schema
@@ -236,6 +238,20 @@ Recommended path:
 
 See `DEPLOYMENT.md` for the full checklist.
 
+## Launch Readiness Matrix
+
+| Stage | Suitable now? | What is ready | Required before advancing |
+| --- | --- | --- | --- |
+| Portfolio demo | Yes | Sample dataset, explainable predictions, in-memory demo leaderboard, optimized cinematic intro, API validation, and local tests. | Keep Demo Mode labels visible and do not claim official/live completeness. |
+| Public beta | Partially | UI, route handlers, server-only football-data key path, and provider-dependent near-live score fallback. | Add durable Supabase/Postgres brackets and leaderboard storage, shared/distributed rate limiting, monitoring, and production environment review. |
+| Production | Not yet | Core app architecture and database schema direction are in place. | Finish verified data curation, durable persistence, auth/abuse controls, observability, legal copy review, and load/performance testing. |
+
+Notes: raw intro masters must stay out of `public/` and Git; keep them under the
+gitignored `assets-src/intro-preview/` folder and publish only optimized
+derivatives. The football-data key is server-only, live scores are
+provider-dependent, WorldCup Oracle has no official FIFA affiliation, and
+predictions are educational estimates, not betting advice.
+
 ## Limitations
 
 - Sample data is intentionally compact and incomplete.
@@ -244,6 +260,8 @@ See `DEPLOYMENT.md` for the full checklist.
 - Demo leaderboard and shared bracket links are in-memory and reset with the server.
 - No production auth or database writes are active yet.
 - The in-memory rate limiter is appropriate for a demo, not a distributed production deployment.
+- Public beta needs durable Supabase/Postgres storage plus shared rate limiting
+  before real users rely on saved brackets or leaderboard rankings.
 - Predictions are educational estimates, not official FIFA data and not betting advice.
 - Official fixtures are not fully curated in-repo yet; placeholder rows are explicitly labeled.
 

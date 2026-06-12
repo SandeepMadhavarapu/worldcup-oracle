@@ -1,5 +1,6 @@
 import { DATASET_MODE } from "@/lib/data";
 import { getLiveResolvedMatches } from "@/lib/calibration/live-results-service";
+import { getBaselineSimulation } from "@/lib/tournament/baseline";
 import type { LeaderboardEntry } from "@/lib/types";
 import type {
   BracketRepository,
@@ -60,10 +61,23 @@ function getStore(): LeaderboardEntry[] {
   return globalStore.worldCupOracleLeaderboard;
 }
 
-function createDemoScore(championTeamId: string, finalistTeamId?: string): number {
-  const championBonus = championTeamId.length % 11;
-  const finalistBonus = finalistTeamId ? finalistTeamId.length % 9 : 0;
-  return 52 + championBonus * 3 + finalistBonus * 2;
+export function createModelDemoScore(
+  championTeamId: string,
+  finalistTeamId?: string,
+): number {
+  const probabilities = getBaselineSimulation().probabilities;
+  const champion = probabilities.find((row) => row.teamId === championTeamId);
+  const finalist = finalistTeamId
+    ? probabilities.find((row) => row.teamId === finalistTeamId)
+    : undefined;
+
+  const championSignal = champion?.champion ?? 0;
+  const finalistSignal = finalist?.final ?? 0;
+  const championPathSignal = champion?.final ?? 0;
+  const rawScore =
+    38 + championSignal * 190 + championPathSignal * 28 + finalistSignal * 32;
+
+  return Math.max(1, Math.min(100, Math.round(rawScore)));
 }
 
 export const inMemoryLeaderboardRepository: LeaderboardRepository = {
@@ -77,7 +91,7 @@ export const inMemoryLeaderboardRepository: LeaderboardRepository = {
       name: input.name,
       championTeamId: input.championTeamId,
       finalistTeamId: input.finalistTeamId,
-      score: createDemoScore(input.championTeamId, input.finalistTeamId),
+      score: createModelDemoScore(input.championTeamId, input.finalistTeamId),
       createdAt: new Date().toISOString(),
       mode: DATASET_MODE,
     };

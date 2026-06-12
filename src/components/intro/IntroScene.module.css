@@ -1,0 +1,1454 @@
+.scene {
+  --cursor-x: 50%;
+  --cursor-y: 48%;
+  --intro-duration: 10000ms;
+  --orbit-size: clamp(260px, 58vmin, 610px);
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 52%, rgba(16, 185, 129, 0.16), transparent 31vmin),
+    radial-gradient(circle at 20% 18%, rgba(56, 189, 248, 0.12), transparent 34vmin),
+    linear-gradient(140deg, #020507 0%, #07110f 42%, #05070b 100%);
+  color: #f8fafc;
+  isolation: isolate;
+}
+
+.scene::before {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at var(--cursor-x) var(--cursor-y), rgba(103, 232, 249, 0.13), transparent 24vmin),
+    radial-gradient(circle at 62% 64%, rgba(250, 204, 21, 0.08), transparent 28vmin);
+  mix-blend-mode: screen;
+  opacity: 0.7;
+  transition: opacity 260ms ease;
+}
+
+.scene::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(2, 6, 23, 0.52), transparent 27%, transparent 72%, rgba(2, 6, 23, 0.58)),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.36), transparent 24%, transparent 62%, rgba(0, 0, 0, 0.64));
+}
+
+.controlDock {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skipButton,
+.replayButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(3, 8, 15, 0.58);
+  color: #f8fafc;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.skipButton {
+  gap: 9px;
+  padding: 0 14px;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.replayButton {
+  width: 42px;
+  padding: 0;
+}
+
+.skipButton:hover,
+.replayButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(103, 232, 249, 0.55);
+  background: rgba(12, 22, 35, 0.74);
+}
+
+.controlIcon {
+  width: 17px;
+  height: 17px;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.deepLayer,
+.motionLayer {
+  position: absolute;
+  inset: -2%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.deepLayer {
+  z-index: 1;
+}
+
+.motionLayer {
+  z-index: 5;
+}
+
+.stadiumBackdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(1.08) contrast(1.08) brightness(0.9);
+  transform-origin: 50% 60%;
+  animation: kenBurns var(--intro-duration) ease-out both;
+}
+
+.backdropVeil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 48%, transparent 0 24%, rgba(2, 6, 12, 0.18) 52%, rgba(1, 4, 9, 0.62) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(2, 6, 12, 0.48));
+}
+
+.pitchGlow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 58%, rgba(255, 255, 255, 0.18), transparent 18vmin),
+    radial-gradient(circle at 54% 52%, rgba(34, 211, 238, 0.18), transparent 38vmin),
+    radial-gradient(circle at 44% 65%, rgba(52, 211, 153, 0.12), transparent 34vmin);
+  mix-blend-mode: screen;
+  opacity: 0.8;
+  animation: pitchGlowPulse var(--intro-duration) ease both;
+}
+
+.lightRig {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.lightRig span {
+  position: absolute;
+  top: 4%;
+  left: var(--beam-x);
+  width: clamp(40px, 9vmin, 110px);
+  height: 78vh;
+  transform-origin: top center;
+  transform: rotate(var(--beam-tilt)) scaleY(0.25);
+  background: linear-gradient(
+    to bottom,
+    rgba(228, 248, 255, 0.5),
+    rgba(186, 230, 253, 0.16) 55%,
+    transparent 85%
+  );
+  clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+  filter: blur(10px);
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: beamPower var(--intro-duration) ease both;
+  animation-delay: var(--beam-delay);
+}
+
+.openingCeremonyGlow {
+  position: absolute;
+  inset: -12%;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 15%, rgba(255, 255, 255, 0.32), transparent 24%),
+    radial-gradient(ellipse at 50% 64%, rgba(34, 211, 238, 0.22), transparent 42%),
+    linear-gradient(90deg, transparent 12%, rgba(103, 232, 249, 0.16), transparent 45%, rgba(250, 204, 21, 0.12), transparent 86%);
+  filter: blur(18px);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transform: scale(0.94);
+  animation: openingCeremonyGlow var(--intro-duration) cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.stadiumFlashBands {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.stadiumFlashBands span {
+  position: absolute;
+  left: -14%;
+  top: var(--band-y);
+  width: 128%;
+  height: clamp(18px, 4.6vh, 42px);
+  transform: skewY(-7deg) translateX(-18%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), rgba(34, 211, 238, 0.22), transparent);
+  filter: blur(11px);
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: stadiumFlashBand var(--intro-duration) ease both;
+  animation-delay: var(--band-delay);
+}
+
+.ledRibbonGlow {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  z-index: 4;
+  width: min(1180px, 116vw);
+  height: min(22vh, 178px);
+  pointer-events: none;
+  transform: translateX(-50%) perspective(760px) rotateX(64deg);
+  opacity: 0;
+  animation: ledRibbonWake var(--intro-duration) ease both;
+}
+
+.ledRibbonGlow span {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.88), rgba(34, 197, 94, 0.75), rgba(250, 204, 21, 0.8), transparent);
+  box-shadow:
+    0 0 20px rgba(34, 211, 238, 0.45),
+    0 0 48px rgba(250, 204, 21, 0.18);
+}
+
+.ledRibbonGlow span:first-child {
+  top: 20%;
+}
+
+.ledRibbonGlow span:last-child {
+  bottom: 18%;
+  opacity: 0.72;
+  transform: scaleX(0.94);
+}
+
+.crowdSilhouetteBand {
+  position: absolute;
+  left: -3%;
+  right: -3%;
+  bottom: 13%;
+  z-index: 3;
+  height: min(16vh, 128px);
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent, rgba(1, 4, 9, 0.38) 22%, rgba(0, 0, 0, 0.78) 100%),
+    repeating-linear-gradient(90deg, transparent 0 10px, rgba(255, 255, 255, 0.05) 10px 11px, transparent 11px 24px);
+  clip-path: polygon(0 58%, 5% 50%, 11% 56%, 18% 43%, 26% 55%, 34% 45%, 42% 58%, 50% 40%, 58% 56%, 67% 45%, 76% 57%, 85% 47%, 93% 58%, 100% 50%, 100% 100%, 0 100%);
+  filter: blur(0.2px);
+  opacity: 0;
+  animation: crowdSilhouette var(--intro-duration) ease both;
+}
+
+.crowdLightField {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.crowdLightField span {
+  position: absolute;
+  left: 4%;
+  top: var(--crowd-row-y);
+  width: 92%;
+  height: 1px;
+  border-radius: 999px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 11px, rgba(248, 250, 252, 0.38) 11px 13px, transparent 13px 31px),
+    linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.24), rgba(250, 204, 21, 0.18), transparent);
+  box-shadow: 0 0 18px rgba(248, 250, 252, 0.24);
+  opacity: 0;
+  animation: crowdLightWave var(--intro-duration) ease-in-out both;
+  animation-delay: var(--crowd-row-delay);
+}
+
+.audienceTwinkles {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.audienceTwinkles span {
+  position: absolute;
+  left: var(--twinkle-x);
+  top: var(--twinkle-y);
+  width: var(--twinkle-size);
+  height: var(--twinkle-size);
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.9);
+  box-shadow:
+    0 0 10px rgba(248, 250, 252, 0.9),
+    0 0 22px rgba(103, 232, 249, 0.42);
+  opacity: 0;
+  animation: audienceTwinkle var(--intro-duration) ease-in-out both;
+  animation-delay: var(--twinkle-delay);
+}
+
+.nationalColorWaves {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.nationalColorWaves span {
+  position: absolute;
+  left: -20%;
+  top: var(--wave-y);
+  width: 140%;
+  height: clamp(16px, 4vh, 36px);
+  transform: translateX(-28%) skewY(-8deg);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--wave-color) 54%, transparent), transparent);
+  filter: blur(13px);
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: nationalWave var(--intro-duration) ease-in-out both;
+  animation-delay: var(--wave-delay);
+}
+
+.celebrationParticles,
+.confettiBurst {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.celebrationParticles span {
+  position: absolute;
+  left: var(--celebration-x);
+  top: var(--celebration-y);
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.88);
+  box-shadow: 0 0 18px rgba(103, 232, 249, 0.78);
+  opacity: 0;
+  animation: celebrationRise 2.1s ease-out both;
+  animation-delay: var(--celebration-delay);
+}
+
+.confettiBurst span {
+  position: absolute;
+  left: var(--confetti-x);
+  bottom: 16%;
+  width: 3px;
+  height: 11px;
+  border-radius: 2px;
+  background: var(--confetti-color);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--confetti-color) 58%, transparent);
+  opacity: 0;
+  transform: rotate(var(--confetti-rotate));
+  animation: confettiLift 1.85s cubic-bezier(0.2, 0.85, 0.35, 1) both;
+  animation-delay: var(--confetti-delay);
+}
+
+.orbitShell {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  width: var(--orbit-size);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation: orbitArrival var(--intro-duration) ease both;
+}
+
+.globeSvg {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--orbit-size) * 0.46);
+  height: calc(var(--orbit-size) * 0.46);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation: globeArrival var(--intro-duration) cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.orbitGlow,
+.orbitRingOuter,
+.orbitRingMiddle,
+.orbitRingInner {
+  position: absolute;
+  inset: 50%;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+}
+
+.orbitGlow {
+  width: 82%;
+  aspect-ratio: 1;
+  background:
+    radial-gradient(circle, transparent 52%, rgba(34, 211, 238, 0.12) 54%, transparent 72%),
+    radial-gradient(circle, rgba(16, 185, 129, 0.08), transparent 54%);
+  filter: blur(5px);
+}
+
+.orbitRingOuter {
+  width: 98%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top-color: rgba(103, 232, 249, 0.34);
+  border-left-color: rgba(250, 204, 21, 0.2);
+  animation: ringRotate 22s linear infinite;
+}
+
+.orbitRingMiddle {
+  width: 80%;
+  aspect-ratio: 1;
+  border: 1px dashed rgba(255, 255, 255, 0.11);
+  border-right-color: rgba(52, 211, 153, 0.36);
+  animation: ringRotateReverse 31s linear infinite;
+}
+
+.orbitRingInner {
+  width: 62%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom-color: rgba(248, 250, 252, 0.52);
+  animation: ringRotate 38s linear infinite;
+}
+
+.teamConstellation {
+  position: absolute;
+  inset: 0;
+  animation: constellationDrift 11s ease-in-out infinite alternate;
+}
+
+.teamMarker {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(34px, 4.5vmin, 50px);
+  height: clamp(18px, 2.25vmin, 24px);
+  border: 1px solid color-mix(in srgb, var(--accent) 72%, white 12%);
+  border-radius: 5px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, transparent), rgba(4, 10, 18, 0.78)),
+    rgba(2, 6, 12, 0.72);
+  box-shadow:
+    0 0 14px color-mix(in srgb, var(--accent) 42%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  color: #f8fafc;
+  font-size: clamp(0.56rem, 1.22vmin, 0.74rem);
+  font-weight: 850;
+  letter-spacing: 0;
+  text-shadow: 0 1px 9px rgba(0, 0, 0, 0.86);
+  transform: translate(-50%, -50%) rotate(var(--angle)) translateX(var(--radius)) rotate(calc(var(--angle) * -1));
+  opacity: 0;
+  animation: teamSignal var(--intro-duration) ease both;
+  animation-delay: var(--delay);
+}
+
+.teamCode {
+  line-height: 1;
+}
+
+.legendMotionGlyphs {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.legendMotionGlyphs g {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.legendMotionGlyphs path {
+  fill: none;
+  stroke: url("#introLegendMotion");
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 5;
+  stroke-dasharray: 18 13;
+  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.52));
+}
+
+.legendMotionGlyphs circle {
+  fill: rgba(248, 250, 252, 0.92);
+  filter: drop-shadow(0 0 13px rgba(250, 204, 21, 0.52));
+}
+
+.legendStride {
+  animation: legendStride var(--intro-duration) ease both;
+}
+
+.legendLeap {
+  animation: legendLeap var(--intro-duration) ease both;
+}
+
+.legendFlare {
+  animation: legendFlare var(--intro-duration) ease both;
+}
+
+.intelligenceSvg {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  animation: intelligenceBloom var(--intro-duration) ease both;
+}
+
+.bracketPath,
+.probabilityArc,
+.probabilityArcAlt {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 440;
+  stroke-dashoffset: 440;
+}
+
+.bracketPath {
+  stroke: rgba(103, 232, 249, 0.58);
+  stroke-width: 2.2;
+  animation: drawBracket var(--intro-duration) ease both;
+}
+
+.bracketPathTwo,
+.bracketPathFour {
+  stroke: rgba(52, 211, 153, 0.68);
+}
+
+.bracketPathThree {
+  stroke: rgba(250, 204, 21, 0.66);
+}
+
+.probabilityArc {
+  stroke: url("#introPreviewSignal");
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.38));
+  animation: drawArc var(--intro-duration) ease both;
+}
+
+.probabilityArcAlt {
+  stroke: rgba(248, 250, 252, 0.36);
+  stroke-width: 1.5;
+  animation: drawArcAlt var(--intro-duration) ease both;
+}
+
+.signalNodes circle {
+  fill: #dffcff;
+  filter: drop-shadow(0 0 9px rgba(103, 232, 249, 0.76));
+  opacity: 0;
+  animation: nodePop var(--intro-duration) ease both;
+}
+
+.dataGlyph {
+  fill: rgba(248, 250, 252, 0.68);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0;
+  opacity: 0;
+  animation: dataGlyph var(--intro-duration) ease both;
+}
+
+.particleField {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.signalParticle {
+  position: absolute;
+  left: var(--particle-x);
+  top: var(--particle-y);
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: #dffcff;
+  box-shadow:
+    0 0 12px rgba(103, 232, 249, 0.9),
+    0 0 28px rgba(52, 211, 153, 0.55);
+  opacity: 0;
+  animation: particleConverge var(--intro-duration) ease both;
+  animation-delay: var(--particle-delay);
+}
+
+.crescendoFlash {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 49%, rgba(255, 255, 255, 0.74), rgba(103, 232, 249, 0.34) 12%, transparent 36%),
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: crescendoFlash var(--intro-duration) ease both;
+}
+
+.titleFrame {
+  position: absolute;
+  inset: 0;
+  z-index: 16;
+  display: grid;
+  place-content: center;
+  padding: 7vh 20px 0;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(18px) scale(0.98);
+  animation: titleReveal var(--intro-duration) cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  will-change: transform;
+}
+
+.titleHalo {
+  position: absolute;
+  left: 50%;
+  top: 53%;
+  z-index: -1;
+  width: min(88vw, 920px);
+  height: min(35vh, 320px);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(ellipse at center, rgba(1, 5, 12, 0.84) 0 24%, rgba(1, 5, 12, 0.62) 42%, transparent 74%),
+    radial-gradient(ellipse at center, rgba(34, 211, 238, 0.2), transparent 66%);
+  filter: blur(2px);
+}
+
+.signalTag {
+  margin: 0 auto 14px;
+  width: fit-content;
+  border: 1px solid rgba(52, 211, 153, 0.36);
+  border-radius: 5px;
+  background: rgba(6, 78, 59, 0.18);
+  padding: 7px 10px;
+  color: #a7f3d0;
+  font-size: clamp(0.64rem, 1.6vw, 0.76rem);
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  box-shadow: 0 0 28px rgba(16, 185, 129, 0.18);
+}
+
+.wordmark {
+  margin: 0;
+  background: linear-gradient(
+    112deg,
+    #9a7426 0%,
+    #f7c948 26%,
+    #fff7d6 50%,
+    #f7c948 74%,
+    #9a7426 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: clamp(3.2rem, 10vw, 8.6rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 0.9;
+  filter: drop-shadow(0 0 22px rgba(247, 201, 72, 0.32))
+    drop-shadow(0 16px 50px rgba(0, 0, 0, 0.85));
+}
+
+.subtitle {
+  margin: clamp(14px, 2.4vmin, 22px) auto 0;
+  max-width: min(820px, 92vw);
+  color: rgba(226, 232, 240, 0.9);
+  font-size: clamp(1rem, 2.5vw, 1.72rem);
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-shadow: 0 0 24px rgba(0, 0, 0, 0.82);
+}
+
+.titleSweep {
+  position: absolute;
+  left: 12%;
+  top: 39%;
+  z-index: -1;
+  width: 28%;
+  height: 28%;
+  transform: rotate(10deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.52), rgba(103, 232, 249, 0.28), transparent);
+  filter: blur(22px);
+  opacity: 0;
+  mix-blend-mode: screen;
+  animation: titleSweep var(--intro-duration) ease both;
+}
+
+.finished .openingCeremonyGlow,
+.finished .stadiumFlashBands span,
+.finished .ledRibbonGlow,
+.finished .crowdSilhouetteBand,
+.finished .crowdLightField span,
+.finished .audienceTwinkles span,
+.finished .nationalColorWaves span,
+.finished .celebrationParticles span,
+.finished .confettiBurst span,
+.finished .pitchGlow,
+.finished .stadiumBackdrop,
+.finished .lightRig span,
+.finished .globeSvg,
+.finished .orbitShell,
+.finished .legendMotionGlyphs g,
+.finished .intelligenceSvg,
+.finished .crescendoFlash,
+.finished .titleFrame,
+.finished .titleSweep,
+.finished .teamMarker,
+.finished .signalParticle {
+  animation: none;
+}
+
+.finished .stadiumBackdrop {
+  transform: scale(1.04);
+}
+
+.finished .lightRig span {
+  opacity: 0.22;
+  transform: rotate(var(--beam-tilt)) scaleY(1);
+}
+
+.finished .globeSvg {
+  opacity: 0.6;
+}
+
+.finished .pitchGlow,
+.finished .ledRibbonGlow,
+.finished .crowdSilhouetteBand,
+.finished .orbitShell {
+  opacity: 0.28;
+}
+
+.finished .teamMarker {
+  opacity: 0.24;
+}
+
+.finished .stadiumFlashBands span,
+.finished .crowdLightField span,
+.finished .audienceTwinkles span,
+.finished .nationalColorWaves span,
+.finished .celebrationParticles span,
+.finished .confettiBurst span,
+.finished .legendMotionGlyphs g,
+.finished .signalParticle,
+.finished .crescendoFlash {
+  opacity: 0;
+}
+
+.finished .intelligenceSvg {
+  opacity: 0.1;
+}
+
+.finished .titleFrame {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+@keyframes pitchGlowPulse {
+  0% {
+    opacity: 0.28;
+  }
+  36% {
+    opacity: 0.78;
+  }
+  73% {
+    opacity: 0.64;
+  }
+  100% {
+    opacity: 0.36;
+  }
+}
+
+@keyframes kenBurns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes beamPower {
+  0% {
+    opacity: 0;
+    transform: rotate(calc(var(--beam-tilt) - 4deg)) scaleY(0.25);
+  }
+  12% {
+    opacity: 0.42;
+    transform: rotate(var(--beam-tilt)) scaleY(1);
+  }
+  40% {
+    opacity: 0.58;
+    transform: rotate(calc(var(--beam-tilt) + 3deg)) scaleY(1);
+  }
+  64% {
+    opacity: 0.48;
+    transform: rotate(calc(var(--beam-tilt) - 2deg)) scaleY(1);
+  }
+  86% {
+    opacity: 0.64;
+    transform: rotate(var(--beam-tilt)) scaleY(1);
+  }
+  100% {
+    opacity: 0.38;
+    transform: rotate(var(--beam-tilt)) scaleY(1);
+  }
+}
+
+@keyframes globeArrival {
+  0%,
+  8% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  22% {
+    opacity: 0.92;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  78% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1.02);
+  }
+}
+
+@keyframes openingCeremonyGlow {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(22px);
+  }
+  13% {
+    opacity: 0.92;
+    transform: scale(1.02) translateY(0);
+  }
+  28% {
+    opacity: 0.58;
+  }
+  68% {
+    opacity: 0.44;
+    transform: scale(1.06) translateY(-4px);
+  }
+  79%,
+  100% {
+    opacity: 0.12;
+    transform: scale(1.08) translateY(-6px);
+  }
+}
+
+@keyframes stadiumFlashBand {
+  0%,
+  5% {
+    opacity: 0;
+    transform: skewY(-7deg) translateX(-24%) scaleX(0.7);
+  }
+  13% {
+    opacity: 0.82;
+  }
+  27% {
+    opacity: 0.22;
+    transform: skewY(-7deg) translateX(12%) scaleX(1.06);
+  }
+  58% {
+    opacity: 0.18;
+  }
+  72% {
+    opacity: 0.54;
+    transform: skewY(-7deg) translateX(24%) scaleX(1.18);
+  }
+  82%,
+  100% {
+    opacity: 0;
+    transform: skewY(-7deg) translateX(36%) scaleX(1.25);
+  }
+}
+
+@keyframes ledRibbonWake {
+  0%,
+  11% {
+    opacity: 0;
+    transform: translateX(-50%) perspective(760px) rotateX(68deg) scaleX(0.82);
+  }
+  24% {
+    opacity: 0.76;
+  }
+  56% {
+    opacity: 0.58;
+    transform: translateX(-50%) perspective(760px) rotateX(64deg) scaleX(1);
+  }
+  72% {
+    opacity: 0.9;
+  }
+  86%,
+  100% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes crowdSilhouette {
+  0%,
+  9% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  26% {
+    opacity: 0.74;
+    transform: translateY(0);
+  }
+  69% {
+    opacity: 0.78;
+  }
+  82%,
+  100% {
+    opacity: 0.26;
+  }
+}
+
+@keyframes crowdLightWave {
+  0%,
+  8% {
+    opacity: 0;
+    transform: translateX(-12%) scaleX(0.75);
+  }
+  22% {
+    opacity: 0.74;
+  }
+  42% {
+    opacity: 0.42;
+    transform: translateX(4%) scaleX(1);
+  }
+  62% {
+    opacity: 0.52;
+  }
+  78% {
+    opacity: 0.76;
+    transform: translateX(12%) scaleX(1.08);
+  }
+  88%,
+  100% {
+    opacity: 0.16;
+  }
+}
+
+@keyframes audienceTwinkle {
+  0%,
+  9% {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  19% {
+    opacity: 0.74;
+    transform: scale(1);
+  }
+  32% {
+    opacity: 0.14;
+  }
+  47% {
+    opacity: 0.6;
+  }
+  63% {
+    opacity: 0.18;
+  }
+  74% {
+    opacity: 0.82;
+    transform: scale(1.32);
+  }
+  86%,
+  100% {
+    opacity: 0;
+    transform: scale(0.42);
+  }
+}
+
+@keyframes nationalWave {
+  0%,
+  18% {
+    opacity: 0;
+    transform: translateX(-36%) skewY(-8deg);
+  }
+  36% {
+    opacity: 0.46;
+  }
+  55% {
+    opacity: 0.34;
+  }
+  71% {
+    opacity: 0.62;
+    transform: translateX(10%) skewY(-8deg);
+  }
+  84%,
+  100% {
+    opacity: 0;
+    transform: translateX(34%) skewY(-8deg);
+  }
+}
+
+@keyframes celebrationRise {
+  0%,
+  6% {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.5);
+  }
+  22% {
+    opacity: 0.68;
+  }
+  66% {
+    opacity: 0.46;
+    transform: translate3d(8px, -92px, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(12px, -136px, 0) scale(0.62);
+  }
+}
+
+@keyframes confettiLift {
+  0%,
+  8% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(var(--confetti-rotate)) scale(0.7);
+  }
+  26% {
+    opacity: 0.8;
+  }
+  68% {
+    opacity: 0.42;
+    transform: translate3d(18px, -116px, 0) rotate(calc(var(--confetti-rotate) + 98deg)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(28px, -164px, 0) rotate(calc(var(--confetti-rotate) + 180deg)) scale(0.6);
+  }
+}
+
+@keyframes orbitArrival {
+  0%,
+  30% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.86) rotate(-8deg);
+  }
+  43% {
+    opacity: 0.72;
+  }
+  70% {
+    opacity: 0.66;
+  }
+  100% {
+    opacity: 0.18;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes ringRotate {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes ringRotateReverse {
+  to {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
+@keyframes constellationDrift {
+  from {
+    transform: rotate(-1.4deg) scale(0.995);
+  }
+  to {
+    transform: rotate(1.6deg) scale(1.008);
+  }
+}
+
+@keyframes teamSignal {
+  0%,
+  28% {
+    opacity: 0;
+    filter: blur(3px);
+  }
+  43% {
+    opacity: 0.84;
+    filter: blur(0);
+  }
+  70% {
+    opacity: 0.68;
+  }
+  100% {
+    opacity: 0.24;
+  }
+}
+
+@keyframes legendStride {
+  0%,
+  20% {
+    opacity: 0;
+    transform: translateX(-58px) scale(0.96);
+  }
+  29%,
+  38% {
+    opacity: 0.82;
+    transform: translateX(0) scale(1);
+  }
+  49%,
+  100% {
+    opacity: 0;
+    transform: translateX(62px) scale(1.02);
+  }
+}
+
+@keyframes legendLeap {
+  0%,
+  28% {
+    opacity: 0;
+    transform: translate(42px, 36px) scale(0.94);
+  }
+  39%,
+  48% {
+    opacity: 0.78;
+    transform: translate(0, 0) scale(1);
+  }
+  59%,
+  100% {
+    opacity: 0;
+    transform: translate(-30px, -22px) scale(1.04);
+  }
+}
+
+@keyframes legendFlare {
+  0%,
+  36% {
+    opacity: 0;
+    transform: translate(-46px, 28px) scale(0.95);
+  }
+  47%,
+  57% {
+    opacity: 0.72;
+    transform: translate(0, 0) scale(1);
+  }
+  68%,
+  100% {
+    opacity: 0;
+    transform: translate(42px, -22px) scale(1.02);
+  }
+}
+
+@keyframes intelligenceBloom {
+  0%,
+  47% {
+    opacity: 0;
+  }
+  60% {
+    opacity: 0.72;
+  }
+  75% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0.14;
+  }
+}
+
+@keyframes drawBracket {
+  0%,
+  48% {
+    stroke-dashoffset: 440;
+    opacity: 0;
+  }
+  66%,
+  78% {
+    stroke-dashoffset: 0;
+    opacity: 0.76;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.12;
+  }
+}
+
+@keyframes drawArc {
+  0%,
+  52% {
+    stroke-dashoffset: 440;
+    opacity: 0;
+  }
+  73% {
+    stroke-dashoffset: 0;
+    opacity: 0.82;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.1;
+  }
+}
+
+@keyframes drawArcAlt {
+  0%,
+  55% {
+    stroke-dashoffset: 440;
+    opacity: 0;
+  }
+  75% {
+    stroke-dashoffset: 0;
+    opacity: 0.42;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.08;
+  }
+}
+
+@keyframes nodePop {
+  0%,
+  56% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  68%,
+  78% {
+    opacity: 0.82;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.14;
+  }
+}
+
+@keyframes dataGlyph {
+  0%,
+  57% {
+    opacity: 0;
+  }
+  70%,
+  78% {
+    opacity: 0.58;
+  }
+  100% {
+    opacity: 0.06;
+  }
+}
+
+@keyframes particleConverge {
+  0%,
+  48% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.55);
+  }
+  61% {
+    opacity: 0.62;
+  }
+  78% {
+    opacity: 0.46;
+    transform: translate3d(calc(50vw - var(--particle-x)), calc(50vh - var(--particle-y)), 0) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(50vw - var(--particle-x)), calc(50vh - var(--particle-y)), 0) scale(0.4);
+  }
+}
+
+@keyframes crescendoFlash {
+  0%,
+  64% {
+    opacity: 0;
+    transform: scaleX(0.3);
+  }
+  71% {
+    opacity: 0.74;
+    transform: scaleX(1);
+  }
+  80%,
+  100% {
+    opacity: 0;
+    transform: scaleX(1.4);
+  }
+}
+
+@keyframes titleReveal {
+  0%,
+  80% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+    filter: blur(9px);
+  }
+  91% {
+    opacity: 1;
+    transform: translateY(0) scale(1.015);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes titleSweep {
+  0%,
+  80% {
+    opacity: 0;
+    transform: translateX(-40vw) rotate(12deg);
+  }
+  91% {
+    opacity: 0.62;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(58vw) rotate(12deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .controlDock {
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+  }
+
+  .skipButton {
+    min-height: 40px;
+    padding: 0 11px;
+    font-size: 0.78rem;
+  }
+
+  .replayButton {
+    width: 40px;
+    min-height: 40px;
+  }
+
+  .titleFrame {
+    padding-top: 12vh;
+  }
+
+  .signalTag {
+    margin-bottom: 10px;
+  }
+
+  .subtitle {
+    max-width: 330px;
+  }
+
+  .dataGlyph {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene::before {
+    opacity: 0.55;
+  }
+
+  .openingCeremonyGlow,
+  .stadiumFlashBands span,
+  .ledRibbonGlow,
+  .crowdSilhouetteBand,
+  .crowdLightField span,
+  .audienceTwinkles span,
+  .nationalColorWaves span,
+  .celebrationParticles span,
+  .confettiBurst span,
+  .pitchGlow,
+  .stadiumBackdrop,
+  .lightRig span,
+  .globeSvg,
+  .orbitShell,
+  .orbitRingOuter,
+  .orbitRingMiddle,
+  .orbitRingInner,
+  .teamConstellation,
+  .teamMarker,
+  .legendMotionGlyphs g,
+  .intelligenceSvg,
+  .bracketPath,
+  .probabilityArc,
+  .probabilityArcAlt,
+  .signalNodes circle,
+  .dataGlyph,
+  .signalParticle,
+  .crescendoFlash,
+  .titleFrame,
+  .titleSweep {
+    animation: none !important;
+  }
+
+  .lightRig span {
+    opacity: 0.22;
+    transform: rotate(var(--beam-tilt)) scaleY(1);
+  }
+
+  .globeSvg {
+    opacity: 0.6;
+  }
+
+  .openingCeremonyGlow,
+  .pitchGlow,
+  .ledRibbonGlow,
+  .crowdSilhouetteBand,
+  .orbitShell {
+    opacity: 0.34;
+  }
+
+  .teamMarker {
+    opacity: 0.32;
+  }
+
+  .stadiumFlashBands span,
+  .crowdLightField span,
+  .audienceTwinkles span,
+  .nationalColorWaves span,
+  .celebrationParticles span,
+  .confettiBurst span,
+  .legendMotionGlyphs g,
+  .signalParticle,
+  .crescendoFlash {
+    opacity: 0;
+  }
+
+  .intelligenceSvg {
+    opacity: 0.28;
+  }
+
+  .titleFrame {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}

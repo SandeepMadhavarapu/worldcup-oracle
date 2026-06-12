@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { SkipForward } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
 
 import { IntroScene } from "@/components/intro/IntroScene";
 import { useIntroGate } from "@/hooks/useIntroGate";
@@ -17,10 +16,7 @@ export function IntroOverlay() {
   const completedRef = useRef(false);
 
   const finish = useCallback(() => {
-    if (completedRef.current) {
-      return;
-    }
-
+    if (completedRef.current) return;
     completedRef.current = true;
     complete();
   }, [complete]);
@@ -38,9 +34,7 @@ export function IntroOverlay() {
       reducedMotion ? INTRO_REDUCED_MOTION_DURATION_MS : INTRO_DURATION_MS,
     );
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        finish();
-      }
+      if (event.key === "Escape") finish();
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -51,35 +45,42 @@ export function IntroOverlay() {
     };
   }, [finish, reducedMotion, shouldShow]);
 
+  useEffect(() => {
+    if (!shouldShow) {
+      return;
+    }
+
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlOverflow = html.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+
+    return () => {
+      html.style.overflow = previousHtmlOverflow;
+      body.style.overflow = previousBodyOverflow;
+    };
+  }, [shouldShow]);
+
   if (!shouldShow) {
     return null;
   }
 
   return (
-    <motion.div
-      className="fixed inset-0 z-[100] bg-black text-white"
+    <div
+      className="fixed inset-0 z-[100] overflow-hidden text-white"
       role="dialog"
       aria-modal="true"
       aria-label="WorldCup Oracle intro"
-      initial={{ opacity: 1 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: reducedMotion ? 0.2 : 0.55, ease: "easeInOut" }}
     >
-      <IntroScene reducedMotion={reducedMotion} />
-      <button
-        type="button"
-        autoFocus
-        onClick={finish}
-        onPointerDown={finish}
-        className="absolute right-4 top-4 z-40 inline-flex h-10 items-center justify-center gap-2 rounded-md border border-white/14 bg-black/30 px-3 text-sm font-semibold text-zinc-100 shadow-2xl shadow-black/40 backdrop-blur transition hover:border-cyan-100/40 hover:bg-white/10 sm:right-6 sm:top-6"
-      >
-        <SkipForward className="size-4" aria-hidden="true" />
-        Skip Intro
-      </button>
+      <IntroScene reducedMotion={reducedMotion} onSkip={finish} />
+
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-6 bottom-5 z-40 mx-auto h-px max-w-3xl bg-gradient-to-r from-transparent via-white/25 to-transparent"
+        className="pointer-events-none absolute inset-x-6 bottom-5 z-40 mx-auto h-px max-w-3xl bg-gradient-to-r from-transparent via-white/22 to-transparent"
       />
-    </motion.div>
+    </div>
   );
 }

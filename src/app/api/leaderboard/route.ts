@@ -6,7 +6,9 @@ import { getLeaderboard } from "@/lib/leaderboard/store";
 export const GET = apiHandler(async (_request, { requestId }) => {
   return jsonOk(
     {
-      mode: "Demo Mode only",
+      mode: "Demo placeholder leaderboard",
+      scoreNote:
+        "Scores are model-aligned demo points from the cached baseline simulation, not real match-result grading.",
       notice: getProviderNotice(),
       entries: await getLeaderboard(),
     },

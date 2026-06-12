@@ -1,154 +1,555 @@
 "use client";
 
-import type { CSSProperties } from "react";
-import { motion } from "framer-motion";
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  type CSSProperties,
+  type PointerEvent,
+} from "react";
+import Image from "next/image";
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from "framer-motion";
+import { SkipForward } from "lucide-react";
 
-import { IntroTitleReveal } from "@/components/intro/IntroTitleReveal";
+import { INTRO_DURATION_MS } from "@/lib/intro/config";
+import { teams } from "@/lib/data/teams";
+import type { Team } from "@/lib/types";
 
-const particles = Array.from({ length: 42 }, (_, index) => ({
-  id: index,
-  left: `${(index * 23) % 100}%`,
-  top: `${12 + ((index * 37) % 76)}%`,
-  delay: `${(index % 9) * 0.18}s`,
-  duration: `${3.6 + (index % 5) * 0.45}s`,
-  size: 2 + (index % 3),
-}));
+// Compliant generic backdrop: an empty night stadium with a cyan energy ring.
+// No players, no crests, no sponsor marks, no watermarks (visually verified).
+import stadiumBackdrop from "./stadium-master.webp";
+import styles from "./IntroScene.module.css";
 
-const tacticalPaths = [
-  "M70 410 C205 295 280 232 438 279 C566 317 607 191 766 144 C850 120 905 147 950 188",
-  "M92 250 C210 214 305 350 427 328 C575 302 602 454 744 398 C825 366 888 378 944 426",
-  "M174 506 C252 418 335 407 424 456 C528 512 624 493 720 416 C791 360 857 338 926 350",
-  "M154 152 L305 250 L478 201 L635 299 L838 215",
-];
+type IntroStyle = CSSProperties & Record<`--${string}`, string | number>;
 
-function StadiumLights({ reducedMotion }: { reducedMotion: boolean }) {
-  const beamClass =
-    "intro-light-beam absolute top-0 h-[74vh] w-24 origin-top rounded-full bg-gradient-to-b from-white/42 via-cyan-100/13 to-transparent blur-xl";
+type TeamMarker = Pick<Team, "accent" | "code" | "group" | "id" | "name"> & {
+  angle: number;
+  delay: number;
+  radius: string;
+};
+
+interface IntroSceneProps {
+  labelId?: string;
+  onSkip?: () => void;
+  reducedMotion: boolean;
+}
+
+const markerRadii = [
+  "calc(var(--orbit-size) * 0.47)",
+  "calc(var(--orbit-size) * 0.35)",
+] as const;
+const ringAngleOffsets = [4, -9] as const;
+const waveColors = [
+  "#38bdf8",
+  "#22c55e",
+  "#facc15",
+  "#ef4444",
+  "#f8fafc",
+  "#fb923c",
+] as const;
+const featuredTeamCodes = [
+  "ARG",
+  "BRA",
+  "FRA",
+  "POR",
+  "USA",
+  "MAR",
+  "JPN",
+  "KOR",
+  "GER",
+  "ENG",
+  "ESP",
+  "NED",
+  "ITA",
+  "MEX",
+  "COL",
+  "SEN",
+  "URU",
+  "CRO",
+] as const;
+
+// Floodlight beams anchored to the light towers visible in the backdrop image.
+const floodlightBeams = [
+  { delay: "0.25s", tilt: "14deg", x: "8%" },
+  { delay: "0.45s", tilt: "6deg", x: "33%" },
+  { delay: "0.6s", tilt: "-6deg", x: "60%" },
+  { delay: "0.35s", tilt: "-14deg", x: "86%" },
+] as const;
+
+export function IntroScene({
+  labelId = "worldcup-oracle-intro-title",
+  onSkip,
+  reducedMotion,
+}: IntroSceneProps) {
+  const rootRef = useRef<HTMLElement | null>(null);
+
+  const pointerX = useMotionValue(0);
+  const pointerY = useMotionValue(0);
+  const smoothX = useSpring(pointerX, { damping: 26, stiffness: 160 });
+  const smoothY = useSpring(pointerY, { damping: 26, stiffness: 160 });
+  const farX = useTransform(smoothX, [-1, 1], [-14, 14]);
+  const farY = useTransform(smoothY, [-1, 1], [-10, 10]);
+  const nearX = useTransform(smoothX, [-1, 1], [18, -18]);
+  const nearY = useTransform(smoothY, [-1, 1], [14, -14]);
+  const titleX = useTransform(smoothX, [-1, 1], [7, -7]);
+  const titleY = useTransform(smoothY, [-1, 1], [5, -5]);
+
+  const markers = useMemo(
+    () => buildTeamMarkers(selectFeaturedTeams(teams)),
+    [],
+  );
+  const parallaxOff = reducedMotion;
+
+  const handlePointerMove = useCallback(
+    (event: PointerEvent<HTMLElement>) => {
+      if (reducedMotion) {
+        return;
+      }
+
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = (event.clientY - rect.top) / rect.height;
+      const clampedX = Math.max(0, Math.min(1, x));
+      const clampedY = Math.max(0, Math.min(1, y));
+
+      pointerX.set(clampedX * 2 - 1);
+      pointerY.set(clampedY * 2 - 1);
+      rootRef.current?.style.setProperty("--cursor-x", `${clampedX * 100}%`);
+      rootRef.current?.style.setProperty("--cursor-y", `${clampedY * 100}%`);
+    },
+    [pointerX, pointerY, reducedMotion],
+  );
+
+  const handlePointerLeave = useCallback(() => {
+    pointerX.set(0);
+    pointerY.set(0);
+    rootRef.current?.style.setProperty("--cursor-x", "50%");
+    rootRef.current?.style.setProperty("--cursor-y", "48%");
+  }, [pointerX, pointerY]);
 
   return (
-    <div aria-hidden="true" className="absolute inset-0 overflow-hidden">
-      <div className="absolute left-[8%] top-0 h-14 w-48 rounded-b-full bg-white/20 blur-2xl" />
-      <div className="absolute right-[8%] top-0 h-14 w-48 rounded-b-full bg-white/20 blur-2xl" />
-      {[0, 1, 2].map((item) => (
+    <section
+      ref={rootRef}
+      aria-labelledby={labelId}
+      className={[styles.scene, reducedMotion ? styles.finished : ""]
+        .join(" ")
+        .trim()}
+      onPointerLeave={handlePointerLeave}
+      onPointerMove={handlePointerMove}
+      style={
+        {
+          "--cursor-x": "50%",
+          "--cursor-y": "48%",
+          "--intro-duration": `${INTRO_DURATION_MS}ms`,
+        } as IntroStyle
+      }
+    >
+      <div className={styles.controlDock}>
+        {onSkip ? (
+          <button
+            type="button"
+            autoFocus
+            className={styles.skipButton}
+            onClick={onSkip}
+            onPointerDown={onSkip}
+          >
+            <SkipForward className={styles.controlIcon} aria-hidden="true" />
+            Skip Intro
+          </button>
+        ) : null}
+      </div>
+
+      <div className={styles.stage}>
+        <motion.div
+          aria-hidden="true"
+          className={styles.deepLayer}
+          style={parallaxOff ? undefined : { x: farX, y: farY }}
+        >
+          <Image
+            src={stadiumBackdrop}
+            alt=""
+            fill
+            preload
+            placeholder="blur"
+            sizes="100vw"
+            className={styles.stadiumBackdrop}
+          />
+          <div className={styles.backdropVeil} />
+          <div className={styles.pitchGlow} />
+          <FloodlightRig />
+          <CeremonyAtmosphere />
+        </motion.div>
+
+        <motion.div
+          aria-hidden="true"
+          className={styles.motionLayer}
+          style={parallaxOff ? undefined : { x: nearX, y: nearY }}
+        >
+          <LegendMotionGlyphs />
+          <TeamOrbit markers={markers} />
+          <IntelligenceOverlay />
+          <MonteCarloParticles />
+          <div className={styles.crescendoFlash} />
+        </motion.div>
+
+        <motion.div
+          className={styles.titleFrame}
+          style={parallaxOff ? undefined : { x: titleX, y: titleY }}
+        >
+          <div className={styles.titleHalo} aria-hidden="true" />
+          <p className={styles.signalTag}>ORACLE SIGNAL ACQUIRED</p>
+          <h1 id={labelId} className={styles.wordmark}>
+            WorldCup Oracle
+          </h1>
+          <p className={styles.subtitle}>
+            Where football legacy meets prediction intelligence
+          </p>
+          <div className={styles.titleSweep} aria-hidden="true" />
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+function FloodlightRig() {
+  return (
+    <div className={styles.lightRig} aria-hidden="true">
+      {floodlightBeams.map((beam) => (
         <span
-          key={`left-${item}`}
-          className={beamClass}
-          style={{
-            left: `${7 + item * 4}%`,
-            "--beam-rotate": `${18 + item * 10}deg`,
-            animationDelay: reducedMotion ? "0s" : `${item * 0.28}s`,
-          } as CSSProperties}
-        />
-      ))}
-      {[0, 1, 2].map((item) => (
-        <span
-          key={`right-${item}`}
-          className={beamClass}
-          style={{
-            right: `${7 + item * 4}%`,
-            "--beam-rotate": `${-18 - item * 10}deg`,
-            animationDelay: reducedMotion ? "0s" : `${item * 0.28}s`,
-          } as CSSProperties}
+          key={beam.x}
+          style={
+            {
+              "--beam-delay": beam.delay,
+              "--beam-tilt": beam.tilt,
+              "--beam-x": beam.x,
+            } as IntroStyle
+          }
         />
       ))}
     </div>
   );
 }
 
-function ParticleField({ reducedMotion }: { reducedMotion: boolean }) {
+function OracleGlobe() {
   return (
-    <div aria-hidden="true" className="absolute inset-0 overflow-hidden">
-      {particles.map((particle) => (
-        <span
-          key={particle.id}
-          className="intro-particle absolute rounded-full bg-cyan-100/80 shadow-[0_0_16px_rgba(103,232,249,0.75)]"
-          style={{
-            animationDelay: reducedMotion ? "0s" : particle.delay,
-            animationDuration: reducedMotion ? "1s" : particle.duration,
-            height: particle.size,
-            left: particle.left,
-            top: particle.top,
-            width: particle.size,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function TacticalMap({ reducedMotion }: { reducedMotion: boolean }) {
-  return (
-    <motion.svg
+    <svg
+      className={styles.globeSvg}
+      viewBox="0 0 220 220"
       aria-hidden="true"
-      viewBox="0 0 1000 600"
-      preserveAspectRatio="xMidYMid slice"
-      className="absolute inset-0 z-10 h-full w-full opacity-80"
-      initial={{ opacity: 0, scale: reducedMotion ? 1 : 1.04 }}
-      animate={{ opacity: reducedMotion ? 0.38 : 0.88, scale: 1 }}
-      transition={{ duration: reducedMotion ? 0.3 : 1.2, delay: reducedMotion ? 0 : 1.4 }}
     >
       <defs>
-        <linearGradient id="intro-path-gradient" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0%" stopColor="#34d399" stopOpacity="0" />
-          <stop offset="46%" stopColor="#67e8f9" stopOpacity="0.94" />
-          <stop offset="100%" stopColor="#fef3c7" stopOpacity="0.18" />
-        </linearGradient>
-        <radialGradient id="intro-core-gradient">
+        <radialGradient id="introGlobeSphere" cx="36%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#a5f3fc" stopOpacity="0.2" />
+          <stop offset="42%" stopColor="#0e7490" stopOpacity="0.16" />
+          <stop offset="100%" stopColor="#021a12" stopOpacity="0.94" />
+        </radialGradient>
+        <radialGradient id="introGlobeAura" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#67e8f9" stopOpacity="0" />
+          <stop offset="72%" stopColor="#67e8f9" stopOpacity="0.16" />
+          <stop offset="100%" stopColor="#67e8f9" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="introGlobeCore" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
-          <stop offset="40%" stopColor="#67e8f9" stopOpacity="0.38" />
-          <stop offset="100%" stopColor="#07100d" stopOpacity="0" />
+          <stop offset="38%" stopColor="#67e8f9" stopOpacity="0.36" />
+          <stop offset="100%" stopColor="#021a12" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <rect x="190" y="150" width="620" height="300" rx="28" fill="none" stroke="rgba(255,255,255,0.08)" />
-      <circle cx="500" cy="300" r="62" fill="none" stroke="rgba(255,255,255,0.08)" />
-      <line x1="500" y1="150" x2="500" y2="450" stroke="rgba(255,255,255,0.06)" />
-      {tacticalPaths.map((path, index) => (
-        <motion.path
-          key={path}
-          d={path}
-          fill="none"
-          stroke="url(#intro-path-gradient)"
-          strokeLinecap="round"
-          strokeWidth={index === 3 ? 1.5 : 2.4}
-          initial={{ pathLength: reducedMotion ? 1 : 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: reducedMotion ? 0.45 : 1 }}
-          transition={{
-            duration: reducedMotion ? 0.2 : 1.15,
-            delay: reducedMotion ? 0.05 : 1.65 + index * 0.2,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
-      <motion.g
-        className={reducedMotion ? "" : "intro-orbit"}
-        initial={{ opacity: 0, scale: 0.84 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: reducedMotion ? 0.35 : 1, delay: reducedMotion ? 0.12 : 2.35 }}
-        style={{ transformOrigin: "500px 300px" }}
-      >
-        <circle cx="500" cy="300" r="116" fill="url(#intro-core-gradient)" />
-        <circle cx="500" cy="300" r="92" fill="none" stroke="#67e8f9" strokeOpacity="0.62" strokeWidth="1.2" />
-        <ellipse cx="500" cy="300" rx="92" ry="28" fill="none" stroke="#fef3c7" strokeOpacity="0.42" />
-        <ellipse cx="500" cy="300" rx="36" ry="92" fill="none" stroke="#67e8f9" strokeOpacity="0.36" />
-        <path d="M408 300 C455 246 546 246 592 300 C546 354 455 354 408 300Z" fill="none" stroke="#34d399" strokeOpacity="0.48" />
-      </motion.g>
-    </motion.svg>
+
+      <circle cx="110" cy="110" r="104" fill="url(#introGlobeAura)" />
+      <circle cx="110" cy="110" r="80" fill="url(#introGlobeSphere)" />
+      <circle cx="110" cy="110" r="27" fill="url(#introGlobeCore)" opacity="0.55" />
+
+      <ellipse cx="110" cy="110" rx="80" ry="25" fill="none" stroke="#67e8f9" strokeOpacity="0.5" strokeWidth="1" />
+      <ellipse cx="110" cy="86" rx="68" ry="21" fill="none" stroke="#67e8f9" strokeOpacity="0.22" strokeWidth="0.6" />
+      <ellipse cx="110" cy="134" rx="68" ry="21" fill="none" stroke="#67e8f9" strokeOpacity="0.22" strokeWidth="0.6" />
+      <ellipse cx="110" cy="110" rx="25" ry="80" fill="none" stroke="#67e8f9" strokeOpacity="0.18" strokeWidth="0.6" />
+      <ellipse cx="110" cy="110" rx="25" ry="80" fill="none" stroke="#67e8f9" strokeOpacity="0.14" strokeWidth="0.6" transform="rotate(60,110,110)" />
+      <ellipse cx="110" cy="110" rx="25" ry="80" fill="none" stroke="#67e8f9" strokeOpacity="0.14" strokeWidth="0.6" transform="rotate(120,110,110)" />
+    </svg>
   );
 }
 
-export function IntroScene({ reducedMotion }: { reducedMotion: boolean }) {
+function CeremonyAtmosphere() {
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[#020604]">
-      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_50%_55%,rgba(8,145,178,0.24),transparent_30%),radial-gradient(circle_at_50%_120%,rgba(16,185,129,0.24),transparent_38%),linear-gradient(180deg,#010303_0%,#07100d_58%,#020403_100%)]" />
-      <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-[42vh] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.13),transparent_56%)] blur-2xl" />
-      <StadiumLights reducedMotion={reducedMotion} />
-      <ParticleField reducedMotion={reducedMotion} />
-      <TacticalMap reducedMotion={reducedMotion} />
-      <div aria-hidden="true" className="absolute inset-x-0 bottom-0 z-10 h-px bg-gradient-to-r from-transparent via-cyan-100/70 to-transparent" />
-      <div aria-hidden="true" className="absolute inset-0 z-20 bg-[radial-gradient(circle_at_center,transparent_0%,transparent_47%,rgba(0,0,0,0.58)_100%)]" />
-      <div className="relative z-30 flex h-full items-center justify-center">
-        <IntroTitleReveal reducedMotion={reducedMotion} />
+    <>
+      <div className={styles.openingCeremonyGlow} aria-hidden="true" />
+      <div className={styles.stadiumFlashBands} aria-hidden="true">
+        {Array.from({ length: 5 }, (_, index) => (
+          <span
+            key={index}
+            style={
+              {
+                "--band-delay": `${0.18 + index * 0.18}s`,
+                "--band-y": `${13 + index * 8}%`,
+              } as IntroStyle
+            }
+          />
+        ))}
       </div>
+      <div className={styles.ledRibbonGlow} aria-hidden="true">
+        <span />
+        <span />
+      </div>
+      <div className={styles.crowdSilhouetteBand} aria-hidden="true" />
+      <div className={styles.crowdLightField} aria-hidden="true">
+        {Array.from({ length: 4 }, (_, index) => (
+          <span
+            key={index}
+            style={
+              {
+                "--crowd-row-delay": `${index * 0.28}s`,
+                "--crowd-row-y": `${58 + index * 5}%`,
+              } as IntroStyle
+            }
+          />
+        ))}
+      </div>
+      <div className={styles.audienceTwinkles} aria-hidden="true">
+        {Array.from({ length: 42 }, (_, index) => (
+          <span
+            key={index}
+            style={
+              {
+                "--twinkle-delay": `${0.16 + (index % 17) * 0.13}s`,
+                "--twinkle-size": `${2 + (index % 3)}px`,
+                "--twinkle-x": `${4 + ((index * 19) % 92)}%`,
+                "--twinkle-y": `${20 + ((index * 31) % 47)}%`,
+              } as IntroStyle
+            }
+          />
+        ))}
+      </div>
+      <div className={styles.nationalColorWaves} aria-hidden="true">
+        {waveColors.map((color, index) => (
+          <span
+            key={color}
+            style={
+              {
+                "--wave-color": color,
+                "--wave-delay": `${2.15 + index * 0.2}s`,
+                "--wave-y": `${36 + index * 5}%`,
+              } as IntroStyle
+            }
+          />
+        ))}
+      </div>
+      <div className={styles.celebrationParticles} aria-hidden="true">
+        {Array.from({ length: 20 }, (_, index) => (
+          <span
+            key={index}
+            style={
+              {
+                "--celebration-delay": `${5.65 + (index % 10) * 0.065}s`,
+                "--celebration-x": `${8 + ((index * 23) % 84)}%`,
+                "--celebration-y": `${63 + ((index * 11) % 20)}%`,
+              } as IntroStyle
+            }
+          />
+        ))}
+      </div>
+      <div className={styles.confettiBurst} aria-hidden="true">
+        {Array.from({ length: 22 }, (_, index) => (
+          <span
+            key={index}
+            style={
+              {
+                "--confetti-color": waveColors[index % waveColors.length],
+                "--confetti-delay": `${6.55 + (index % 12) * 0.04}s`,
+                "--confetti-rotate": `${(index * 37) % 180}deg`,
+                "--confetti-x": `${8 + ((index * 29) % 84)}%`,
+              } as IntroStyle
+            }
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
+function buildTeamMarkers(selectedTeams: Team[]): TeamMarker[] {
+  const ringPositions = [0, 0];
+  const ringTotals = [0, 1].map((ring) =>
+    selectedTeams.filter((_, index) => index % 2 === ring).length,
+  );
+
+  return selectedTeams.map((team, index) => {
+    const ring = index % 2;
+    const position = ringPositions[ring]++;
+    const angle =
+      (360 / Math.max(1, ringTotals[ring])) * position + ringAngleOffsets[ring];
+
+    return {
+      accent: team.accent,
+      angle,
+      code: team.code,
+      delay: index * 0.035,
+      group: team.group,
+      id: team.id,
+      name: team.name,
+      radius: markerRadii[ring],
+    };
+  });
+}
+
+function selectFeaturedTeams(allTeams: Team[]) {
+  const teamByCode = new Map(allTeams.map((team) => [team.code, team]));
+  return featuredTeamCodes
+    .map((code) => teamByCode.get(code))
+    .filter((team): team is Team => Boolean(team));
+}
+
+function LegendMotionGlyphs() {
+  return (
+    <svg
+      className={styles.legendMotionGlyphs}
+      viewBox="0 0 1200 700"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="introLegendMotion" x1="0" x2="1" y1="0" y2="1">
+          <stop stopColor="#f8fafc" offset="0" />
+          <stop stopColor="#22d3ee" offset="0.52" />
+          <stop stopColor="#facc15" offset="1" />
+        </linearGradient>
+      </defs>
+      <g className={styles.legendStride}>
+        <path d="M198 470 C274 405 325 438 402 366 C438 333 470 320 508 322" />
+        <path d="M420 246 C394 268 390 314 424 337 L458 360 L430 414" />
+        <circle cx="198" cy="470" r="10" />
+      </g>
+      <g className={styles.legendLeap}>
+        <path d="M846 458 C816 388 852 315 926 284 C969 266 1007 272 1043 292" />
+        <path d="M840 188 C824 226 841 265 882 284 L916 310 L874 370" />
+        <circle cx="1048" cy="292" r="11" />
+      </g>
+      <g className={styles.legendFlare}>
+        <path d="M392 545 C484 496 490 564 570 515 C624 482 604 430 680 414" />
+        <path d="M644 278 C616 318 638 363 682 378 L718 391" />
+        <circle cx="392" cy="545" r="9" />
+      </g>
+    </svg>
+  );
+}
+
+function TeamOrbit({ markers }: { markers: TeamMarker[] }) {
+  return (
+    <div className={styles.orbitShell} aria-hidden="true">
+      <div className={styles.orbitGlow} />
+      <OracleGlobe />
+      <div className={styles.orbitRingOuter} />
+      <div className={styles.orbitRingMiddle} />
+      <div className={styles.orbitRingInner} />
+      <div className={styles.teamConstellation}>
+        {markers.map((team) => (
+          <span
+            key={team.id}
+            className={styles.teamMarker}
+            style={
+              {
+                "--accent": team.accent,
+                "--angle": `${team.angle}deg`,
+                "--delay": `${team.delay}s`,
+                "--radius": team.radius,
+              } as IntroStyle
+            }
+            title={`${team.name} - Group ${team.group}`}
+          >
+            <span className={styles.teamCode}>{team.code}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IntelligenceOverlay() {
+  return (
+    <svg
+      className={styles.intelligenceSvg}
+      viewBox="0 0 1200 700"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="introPreviewSignal" x1="0" x2="1" y1="0" y2="0">
+          <stop stopColor="#34d399" offset="0" />
+          <stop stopColor="#22d3ee" offset="0.55" />
+          <stop stopColor="#facc15" offset="1" />
+        </linearGradient>
+      </defs>
+      <path
+        className={`${styles.bracketPath} ${styles.bracketPathOne}`}
+        d="M122 455 H250 V398 H352"
+      />
+      <path
+        className={`${styles.bracketPath} ${styles.bracketPathTwo}`}
+        d="M122 530 H250 V588 H352"
+      />
+      <path
+        className={`${styles.bracketPath} ${styles.bracketPathThree}`}
+        d="M848 398 H956 V455 H1078"
+      />
+      <path
+        className={`${styles.bracketPath} ${styles.bracketPathFour}`}
+        d="M848 588 H956 V530 H1078"
+      />
+      <path
+        className={styles.probabilityArc}
+        d="M355 500 C476 382 718 382 845 500"
+      />
+      <path
+        className={styles.probabilityArcAlt}
+        d="M415 546 C530 644 673 643 790 545"
+      />
+      <g className={styles.signalNodes}>
+        {[
+          [250, 398],
+          [250, 588],
+          [352, 398],
+          [352, 588],
+          [848, 398],
+          [848, 588],
+          [956, 455],
+          [956, 530],
+        ].map(([cx, cy]) => (
+          <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="5" />
+        ))}
+      </g>
+      <text className={styles.dataGlyph} x="310" y="377">
+        64%
+      </text>
+      <text className={styles.dataGlyph} x="804" y="377">
+        71%
+      </text>
+      <text className={styles.dataGlyph} x="548" y="612">
+        10K RUNS
+      </text>
+    </svg>
+  );
+}
+
+function MonteCarloParticles() {
+  return (
+    <div className={styles.particleField} aria-hidden="true">
+      {Array.from({ length: 22 }, (_, index) => (
+        <span
+          key={index}
+          className={styles.signalParticle}
+          style={
+            {
+              "--particle-delay": `${index * 0.05}s`,
+              "--particle-x": `${(index * 29) % 100}%`,
+              "--particle-y": `${18 + ((index * 47) % 62)}%`,
+            } as IntroStyle
+          }
+        />
+      ))}
     </div>
   );
 }

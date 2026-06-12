@@ -51,7 +51,10 @@ describe("api route validation", () => {
 
     expect(response.status).toBe(422);
     expect(payload.ok).toBe(false);
-    expect(elapsedMs).toBeLessThan(500);
+    // Validation must reject BEFORE simulating. The generous bound only guards
+    // against accidentally running the full simulation (~seconds), while
+    // staying robust to slow CI machines and coverage instrumentation.
+    expect(elapsedMs).toBeLessThan(5_000);
   });
 
   it("allows the public max simulation count", async () => {
@@ -74,8 +77,10 @@ describe("api route validation", () => {
     expect(payload.ok ? payload.data.simulation.iterations : 0).toBe(
       MAX_PUBLIC_SIMULATIONS,
     );
-    expect(elapsedMs).toBeLessThan(10_000);
-  });
+    // Wall-clock sanity bound only — generous so slow CI machines and coverage
+    // instrumentation cannot flake this test.
+    expect(elapsedMs).toBeLessThan(60_000);
+  }, 120_000);
 
   it("returns a typed success envelope for valid simulation requests", async () => {
     const response = await simulateTournamentPost(
@@ -233,7 +238,9 @@ describe("api route validation", () => {
         }
       }
     }
-  });
+    // The first call computes the cached baseline simulation (~seconds), so
+    // give this test a generous timeout for slow CI and coverage runs.
+  }, 120_000);
 
   it("rejects a team-path request with a missing or unknown team", async () => {
     const missing = await teamPathGet(

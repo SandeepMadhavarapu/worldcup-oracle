@@ -44,6 +44,20 @@ The built-in rate limiter is in-memory and per-process. For production traffic, 
 
 Demo leaderboard entries and bracket share URLs are in-memory only. They are useful for portfolio review, but they are not durable across redeploys or server restarts until the repository abstraction is wired to a database.
 
+## Readiness Matrix
+
+| Stage | Status | Requirements |
+| --- | --- | --- |
+| Portfolio demo | Ready | Keep Demo Mode labels, sample-data limitations, no FIFA affiliation, and not-betting-advice copy visible. |
+| Public beta | Needs work | Add Supabase/Postgres persistence for brackets/leaderboards, shared rate limiting, monitoring, and production abuse controls. |
+| Production | Not ready | Complete verified data curation, durable persistence, auth/abuse controls, observability, legal review, and load testing. |
+
+The football-data key must remain server-only. Near-live scores are
+provider-dependent and may gracefully degrade when the provider or key is
+unavailable. Raw cinematic intro masters must stay out of `public/` and Git;
+ship only the optimized WebP backdrop derivative bundled with the intro
+component.
+
 ## After Deploying
 
 1. Smoke check `/`, `/dashboard`, `/model-lab`, `/teams/argentina`.

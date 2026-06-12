@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { isIntroEnabled } from "@/lib/intro/config";
+import {
+  INTRO_DURATION_MS,
+  INTRO_REDUCED_MOTION_DURATION_MS,
+  isIntroEnabled,
+} from "@/lib/intro/config";
 import { hasIntroCompleted, markIntroCompleted } from "@/lib/intro/storage";
 
 class MemoryStorage implements Storage {
@@ -52,5 +56,10 @@ describe("intro gate utilities", () => {
     vi.stubEnv("NEXT_PUBLIC_ENABLE_INTRO", "false");
 
     expect(isIntroEnabled()).toBe(false);
+  });
+
+  it("uses the cinematic intro pacing with a reduced-motion shortcut", () => {
+    expect(INTRO_DURATION_MS).toBe(10000);
+    expect(INTRO_REDUCED_MOTION_DURATION_MS).toBeLessThan(INTRO_DURATION_MS);
   });
 });

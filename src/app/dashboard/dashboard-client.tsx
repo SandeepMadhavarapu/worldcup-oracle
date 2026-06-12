@@ -1041,8 +1041,9 @@ export function DashboardClient({
                   </h2>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-zinc-400">
-                  Demo Mode only. Saved entries and bracket links are temporary
-                  until a database adapter is wired.
+                  Demo placeholder leaderboard. Scores are model-aligned demo
+                  points from the baseline simulation; saved entries and links
+                  are temporary until a database adapter is wired.
                 </p>
                 <div className="mt-5 grid gap-4">
                   <label>
@@ -1095,8 +1096,11 @@ export function DashboardClient({
               <Card className="overflow-hidden">
                 <div className="border-b border-white/10 p-5">
                   <h2 className="text-lg font-semibold text-white">
-                    Public Leaderboard
+                    Demo Placeholder Leaderboard
                   </h2>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    Points are not real tournament grading yet.
+                  </p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[620px] text-left text-sm">
@@ -1106,7 +1110,7 @@ export function DashboardClient({
                         <th className="px-5 py-3">User</th>
                         <th className="px-5 py-3">Champion</th>
                         <th className="px-5 py-3">Finalist</th>
-                        <th className="px-5 py-3">Score</th>
+                        <th className="px-5 py-3">Demo score</th>
                       </tr>
                     </thead>
                     <tbody>

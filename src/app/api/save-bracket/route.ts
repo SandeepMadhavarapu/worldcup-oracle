@@ -20,7 +20,9 @@ export const POST = apiHandler(async (request, { requestId }) => {
 
   return jsonOk(
     {
-      mode: "Demo Mode only",
+      mode: "Demo placeholder leaderboard",
+      scoreNote:
+        "Scores are model-aligned demo points from the cached baseline simulation, not real match-result grading.",
       entry,
     },
     { requestId },
