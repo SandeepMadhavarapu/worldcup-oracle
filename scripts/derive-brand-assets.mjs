@@ -12,7 +12,7 @@
 //   public/icons/icon-192.png
 //   public/icons/icon-512.png
 //   public/icons/icon-512-maskable.png
-//   public/og-card.png
+//   public/og-card.webp
 //   public/images/stadium-oracle-hero.webp
 //   public/images/texture-mesh.webp
 //   public/images/texture-bracket.webp
@@ -95,20 +95,31 @@ async function deriveIcons() {
   // A square framing the orb plus its surrounding particle swirl.
   const crop = squareCrop(width, height, 1500, ORB.fx, ORB.fy);
   const orb = sharp(HERO).extract(crop);
+  const optimizedPng = {
+    compressionLevel: 9,
+    effort: 10,
+    palette: true,
+  };
 
-  await orb.clone().resize(512, 512).png().toFile(join(iconsDir, "icon-512.png"));
-  await orb.clone().resize(192, 192).png().toFile(join(iconsDir, "icon-192.png"));
+  await orb
+    .clone()
+    .resize(192, 192)
+    .png({ ...optimizedPng, colors: 192 })
+    .toFile(join(iconsDir, "icon-192.png"));
 
-  // Maskable icon: content lives inside the central 80% safe zone, padded
-  // with the navy theme color so platform masks never clip the orb.
+  // 512px icons keep the content inside the central 80% safe zone, padded
+  // with the navy theme color so platform masks never clip the orb and the
+  // PNGs stay small enough for the install manifest.
   const safe = Math.round(512 * 0.8); // 410px
   const inner = await orb.clone().resize(safe, safe).png().toBuffer();
-  await sharp({
-    create: { width: 512, height: 512, channels: 4, background: NAVY },
-  })
-    .composite([{ input: inner, gravity: "center" }])
-    .png()
-    .toFile(join(iconsDir, "icon-512-maskable.png"));
+  for (const iconName of ["icon-512.png", "icon-512-maskable.png"]) {
+    await sharp({
+      create: { width: 512, height: 512, channels: 4, background: NAVY },
+    })
+      .composite([{ input: inner, gravity: "center" }])
+      .png({ ...optimizedPng, colors: 128 })
+      .toFile(join(iconsDir, iconName));
+  }
 
   return crop;
 }
@@ -145,8 +156,8 @@ async function deriveOgCard() {
 
   await sharp(base)
     .composite([{ input: overlay, top: 0, left: 0 }])
-    .png()
-    .toFile(outPublic("og-card.png"));
+    .webp({ quality: 96, effort: 6 })
+    .toFile(outPublic("og-card.webp"));
 }
 
 async function deriveWebp() {
@@ -178,7 +189,7 @@ async function main() {
   console.log("  public/icons/icon-192.png");
   console.log("  public/icons/icon-512.png");
   console.log("  public/icons/icon-512-maskable.png");
-  console.log("  public/og-card.png");
+  console.log("  public/og-card.webp");
   console.log("  public/images/stadium-oracle-hero.webp");
   console.log("  public/images/texture-mesh.webp");
   console.log("  public/images/texture-bracket.webp");

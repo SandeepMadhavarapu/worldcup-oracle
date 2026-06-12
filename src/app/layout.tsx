@@ -8,7 +8,7 @@ import { getPublicSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const siteUrl = getPublicSiteUrl();
-const ogImageUrl = new URL("/og-card.png", siteUrl).toString();
+const ogImageUrl = new URL("/og-card.webp", siteUrl).toString();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -31,6 +31,7 @@ export const metadata: Metadata = {
         url: ogImageUrl,
         width: 1200,
         height: 630,
+        type: "image/webp",
         alt: "WorldCup Oracle — Monte Carlo predictions that explain themselves.",
       },
     ],

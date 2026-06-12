@@ -35,7 +35,7 @@ export function getProviderNotice(): string {
   const mode = getProviderMode();
 
   if (mode === "LIVE_PROVIDER_MODE") {
-    return "Live provider mode is configured server-side. Predictions remain educational estimates and are not official FIFA projections.";
+    return "Live Provider Mode: a live provider is configured server-side. Predictions remain educational estimates and are not official FIFA projections.";
   }
 
   if (mode === "OFFLINE_DATASET_MODE") {

@@ -67,6 +67,53 @@ database/schema.sql     Postgres/Supabase-ready schema
 src/__tests__           Unit and route-handler tests
 ```
 
+## Architecture & Limitations
+
+WorldCup Oracle is intentionally production-presentable without pretending that
+demo infrastructure is production infrastructure. The app separates the parts
+that are launch-shaped from the parts that are still portfolio/demo tier.
+
+Production-grade foundations:
+
+- API layer uses consistent success/error envelopes, request IDs, typed route
+  helpers, Zod validation, and centralized error sanitization.
+- Structured access logging records method, path, request ID, status, and
+  duration without logging request or response bodies.
+- Live football-data.org integration is server-key only, provider-gated, cached,
+  and allowed to fail closed into honest fallback UI.
+- Calibration is honest about source state: real resolved matches are used only
+  when available, otherwise the app labels synthetic examples as illustrative.
+- Security posture includes CSP, frame protection, content-type sniffing
+  protection, referrer policy, permissions policy, sitemap, robots, and PWA
+  metadata.
+- Domain logic is isolated and tested: prediction math, tournament simulation,
+  knockout path resolution, API hardening, live-cache behavior, and calibration.
+
+Demo-tier pieces:
+
+- Saved brackets and leaderboard entries currently use an in-memory repository.
+  They are suitable for review sessions, but reset on cold starts, redeploys, or
+  process replacement.
+- The public route rate limiter is also in memory and per instance. It reduces
+  accidental abuse in a demo, but it is not a distributed production control.
+- The leaderboard score is a model-aligned demo score from the cached baseline
+  simulation, not real tournament result grading.
+- The fixture/bracket matrix has an approximate resolver until the complete
+  official source data is curated and locked.
+
+Real productionization would need:
+
+- Postgres or another durable relational store for users, saved brackets,
+  leaderboard entries, simulations, model runs, fixtures, and audit history.
+- Redis, Vercel KV, Upstash, or equivalent shared storage for rate-limit buckets,
+  live provider cache coordination, and abuse controls across instances.
+- Authentication, authorization, user-owned bracket history, profile management,
+  and moderation/admin workflows.
+- Observability beyond console logs: log drains, metrics, alerts, tracing, error
+  reporting, and uptime checks.
+- Verified data ingestion jobs, source freshness checks, backfills, migrations,
+  backup/restore, load testing, legal review, and privacy/security review.
+
 ## Prediction Model
 
 The model is a practical baseline, not a claim of real forecasting superiority.

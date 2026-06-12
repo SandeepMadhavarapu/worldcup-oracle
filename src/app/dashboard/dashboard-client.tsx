@@ -1043,7 +1043,8 @@ export function DashboardClient({
                 <p className="mt-2 text-sm leading-6 text-zinc-400">
                   Demo placeholder leaderboard. Scores are model-aligned demo
                   points from the baseline simulation; saved entries and links
-                  are temporary until a database adapter is wired.
+                  live in memory and reset on cold starts until a database
+                  adapter is wired.
                 </p>
                 <div className="mt-5 grid gap-4">
                   <label>
