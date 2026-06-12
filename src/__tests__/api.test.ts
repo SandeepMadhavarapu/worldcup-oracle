@@ -170,7 +170,9 @@ describe("api route validation", () => {
   });
 
   it("returns a typed calibration report sourced from resolved matches", async () => {
-    const response = await calibrationGet();
+    const response = await calibrationGet(
+      new Request("http://localhost/api/calibration"),
+    );
     const payload = await parse<{
       synthetic: boolean;
       source: string;
