@@ -2,7 +2,7 @@
 // of our internal team ids, so a real FINISHED match can be graded by the same
 // prediction engine the rest of the app uses. Pure and unit-tested: no I/O.
 //
-// Strategy, in order: exact code match (FIFA-style tri-codes are stable), then
+// Strategy, in order: exact code match (association tri-codes are stable), then
 // a normalized-name match, then a small alias table for provider names that do
 // not normalize onto ours (e.g. "Korea Republic", "IR Iran", "Türkiye"). Any
 // team we cannot confidently resolve returns null so the caller can skip it

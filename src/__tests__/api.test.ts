@@ -2,13 +2,14 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { GET as calibrationGet } from "@/app/api/calibration/route";
 import { POST as predictMatchPost } from "@/app/api/predict-match/route";
+import { POST as saveBracketPost } from "@/app/api/save-bracket/route";
 import { POST as simulateTournamentPost } from "@/app/api/simulate-tournament/route";
 import { GET as teamPathGet } from "@/app/api/team-path/route";
 import { enforceRateLimit, resetRateLimitStoreForTests } from "@/lib/api/rate-limit";
 import type { CalibrationReport } from "@/lib/calibration/types";
 import { MAX_PUBLIC_SIMULATIONS } from "@/lib/tournament/constants";
 import type { TeamPathReport } from "@/lib/tournament/team-path";
-import type { ApiResponse } from "@/lib/types";
+import type { ApiResponse, LeaderboardEntry } from "@/lib/types";
 
 const HEAVY_SIMULATION_TIMEOUT_MS = 180_000;
 
@@ -86,6 +87,72 @@ describe("api route validation", () => {
     expect(response.status).toBe(200);
     expect(payload.ok).toBe(true);
     expect(payload.ok ? payload.data.simulation.iterations : 0).toBe(2);
+  });
+
+  it("accepts a valid JSON bracket-save payload", async () => {
+    const response = await saveBracketPost(
+      new Request("http://localhost/api/save-bracket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Launch Reviewer",
+          championTeamId: "argentina",
+          finalistTeamId: "france",
+        }),
+      }),
+    );
+    const payload = await parse<{ entry: LeaderboardEntry }>(response);
+
+    expect(response.status).toBe(200);
+    expect(payload.ok).toBe(true);
+
+    if (payload.ok) {
+      expect(payload.data.entry.name).toBe("Launch Reviewer");
+      expect(payload.data.entry.championTeamId).toBe("argentina");
+    }
+  }, HEAVY_SIMULATION_TIMEOUT_MS);
+
+  it("rejects missing or wrong JSON content types", async () => {
+    const requests = [
+      new Request("http://localhost/api/predict-match", {
+        method: "POST",
+        body: JSON.stringify({ teamAId: "argentina", teamBId: "france" }),
+      }),
+      new Request("http://localhost/api/predict-match", {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ teamAId: "argentina", teamBId: "france" }),
+      }),
+    ];
+
+    for (const request of requests) {
+      const response = await predictMatchPost(request);
+      const payload = await parse(response);
+
+      expect(response.status).toBe(415);
+      expect(payload.ok).toBe(false);
+      expect(payload.ok ? "" : payload.error.code).toBe(
+        "UNSUPPORTED_MEDIA_TYPE",
+      );
+    }
+  });
+
+  it("rejects oversized JSON content-length before parsing", async () => {
+    const response = await predictMatchPost(
+      new Request("http://localhost/api/predict-match", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": "4097",
+        },
+        body: JSON.stringify({ teamAId: "argentina", teamBId: "france" }),
+      }),
+    );
+    const payload = await parse(response);
+
+    expect(response.status).toBe(413);
+    expect(payload.ok).toBe(false);
+    expect(payload.ok ? "" : payload.error.code).toBe("PAYLOAD_TOO_LARGE");
   });
 
   it("returns a friendly malformed JSON error without parser details", async () => {

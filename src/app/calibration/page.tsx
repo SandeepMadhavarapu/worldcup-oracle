@@ -1,11 +1,20 @@
 import type { Metadata } from "next";
 import { Gauge, ScanLine, Sigma, Target } from "lucide-react";
 
+import {
+  DataTable,
+  SourceBadge,
+  type DataTableColumn,
+} from "@/components/data-center";
 import { Card, Section, Shell, StatusPill } from "@/components/ui";
 import { ReliabilityDiagram } from "@/app/calibration/reliability-diagram";
 import { buildCalibrationReport } from "@/lib/calibration/calibration";
 import { getCalibrationSource } from "@/lib/calibration/server";
 import { getProviderNotice } from "@/lib/data";
+import {
+  buildCalibrationEvidenceRows,
+  type CalibrationEvidenceRow,
+} from "@/lib/data-center/summary";
 
 export const metadata: Metadata = {
   title: "Calibration | WorldCup Oracle",
@@ -17,10 +26,34 @@ function toPercent(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
 
+const evidenceColumns: Array<DataTableColumn<CalibrationEvidenceRow>> = [
+  { key: "match", header: "Match", render: (row) => row.match },
+  { key: "kickoff", header: "Kickoff", render: (row) => row.kickoff },
+  { key: "predicted", header: "Predicted probabilities", render: (row) => row.predicted },
+  { key: "pick", header: "Predicted pick", render: (row) => row.predictedPick },
+  { key: "actual", header: "Actual", render: (row) => row.actual },
+  { key: "brier", header: "Brier contribution", render: (row) => row.brier },
+  {
+    key: "source",
+    header: "Source",
+    render: (row) => (
+      <div className="space-y-2">
+        <SourceBadge kind={row.sourceKind}>
+          {row.sourceKind === "live" ? "Live" : "Illustrative"}
+        </SourceBadge>
+        <p className="max-w-xs text-xs leading-5 text-zinc-400">
+          {row.sourceLabel}
+        </p>
+      </div>
+    ),
+  },
+];
+
 export default async function CalibrationPage() {
   const source = await getCalibrationSource();
   const report = buildCalibrationReport(source.matches);
   const populatedBuckets = report.buckets.filter((bucket) => bucket.count > 0);
+  const evidenceRows = buildCalibrationEvidenceRows(source);
   const isLive = source.isLive;
 
   const stats = [
@@ -97,7 +130,7 @@ export default async function CalibrationPage() {
               <p className="mt-0.5 text-sm leading-6 text-zinc-300/80">
                 {isLive
                   ? "Real finished World Cup matches grading the model right now."
-                  : "Real resolved World Cup matches. The count climbs as games finish."}
+                  : "No real resolved matches are included yet; this view is illustrative until provider results arrive."}
               </p>
             </div>
           </div>
@@ -192,6 +225,17 @@ export default async function CalibrationPage() {
             </div>
           </Card>
         </div>
+      </Section>
+
+      <Section className="pt-0">
+        <DataTable
+          title="Resolved Match Evidence Table"
+          description="The row-level evidence behind the calibration report. Synthetic rows are labeled illustrative until real resolved matches arrive."
+          columns={evidenceColumns}
+          rows={evidenceRows}
+          getRowKey={(row, index) => `${row.match}-${index}`}
+          minWidth="1180px"
+        />
       </Section>
 
       <Section className="bg-[#10120d]">

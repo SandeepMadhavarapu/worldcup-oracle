@@ -34,13 +34,32 @@ describe("world cup 2026 official-data-ready layer", () => {
     }
   });
 
-  it("keeps seeded fixtures labeled and free of fake results", () => {
+  it("keeps seeded fixtures labeled and only completed rows carry sourced results", () => {
     expect(worldCup2026Fixtures.length).toBeGreaterThanOrEqual(2);
+
+    const openingMatch = worldCup2026Fixtures.find(
+      (fixture) => fixture.matchNumber === 1,
+    );
+    expect(openingMatch).toMatchObject({
+      status: "completed",
+      homeTeam: "mexico",
+      awayTeam: "south-africa",
+      homeGoals: 2,
+      awayGoals: 0,
+      resultSourceLabel: "manual public match-report result",
+    });
 
     for (const fixture of worldCup2026Fixtures) {
       expect(fixture.matchNumber).toBeGreaterThan(0);
-      expect(fixture.status).toBe("scheduled");
       expect(fixture.sourceLabel.length).toBeGreaterThan(0);
+
+      if (fixture.status === "completed") {
+        expect(fixture.homeGoals).toBeGreaterThanOrEqual(0);
+        expect(fixture.awayGoals).toBeGreaterThanOrEqual(0);
+        expect(fixture.resultSourceLabel?.length).toBeGreaterThan(0);
+        continue;
+      }
+
       expect(fixture).not.toHaveProperty("homeGoals");
       expect(fixture).not.toHaveProperty("awayGoals");
     }

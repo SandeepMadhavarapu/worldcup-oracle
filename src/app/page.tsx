@@ -95,7 +95,7 @@ export default function Home() {
               </Link>
             </div>
             <p className="mt-6 max-w-xl text-sm leading-6 text-zinc-400">
-              {providerNotice} Not official FIFA data. Not betting advice.
+              {providerNotice} Not official tournament data. Not betting advice.
             </p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function Home() {
           <MetricCard
             label="Mode"
             value="Demo"
-            detail="No fake live scores, no official FIFA claims, no betting framing."
+            detail="No fake live scores, no official tournament claims, no betting framing."
             tone="rose"
           />
         </div>

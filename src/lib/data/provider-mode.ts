@@ -35,14 +35,14 @@ export function getProviderNotice(): string {
   const mode = getProviderMode();
 
   if (mode === "LIVE_PROVIDER_MODE") {
-    return "Live Provider Mode: a live provider is configured server-side. Predictions remain educational estimates and are not official FIFA projections.";
+    return "Live Provider Mode: a live provider is configured server-side. Predictions remain educational estimates and are not official tournament projections.";
   }
 
   if (mode === "OFFLINE_DATASET_MODE") {
     return "Offline Dataset Mode: a live provider was selected, but required server-side API keys are missing. The app is using local sample data.";
   }
 
-  return "Sample Dataset Mode: local demo data is used for engineering review. No live scores or official FIFA predictions are shown.";
+  return "Sample Dataset Mode: local demo data is used for engineering review. No live scores or official tournament predictions are shown.";
 }
 
 export function createApiMeta(requestId: string): ApiMeta {

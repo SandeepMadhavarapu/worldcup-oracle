@@ -151,7 +151,7 @@ export default async function BracketPage({
         </div>
 
         <p className="mt-6 max-w-3xl text-sm leading-7 text-zinc-400">
-          {getProviderNotice()} Not official FIFA data. Not betting advice.
+          {getProviderNotice()} Not official tournament data. Not betting advice.
         </p>
       </Section>
     </Shell>

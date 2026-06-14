@@ -7,10 +7,17 @@ import {
   ShieldAlert,
 } from "lucide-react";
 
+import { DataTable, type DataTableColumn } from "@/components/data-center";
 import { Card, Section, Shell, StatusPill } from "@/components/ui";
-import { getProviderNotice, historicalResults } from "@/lib/data";
+import { getProviderMode, getProviderNotice, historicalResults } from "@/lib/data";
 import { buildTeamRatings } from "@/lib/prediction/elo";
 import { runBacktestScaffold } from "@/lib/prediction/backtest";
+import {
+  buildModelInputRows,
+  type ModelInputRow,
+} from "@/lib/data-center/summary";
+import { MODEL_VERSION } from "@/lib/tournament/simulator";
+import type { ProviderMode } from "@/lib/types";
 
 const inputs = [
   {
@@ -35,8 +42,66 @@ const inputs = [
   },
 ];
 
+interface AssumptionRow {
+  area: string;
+  implementation: string;
+  limitation: string;
+}
+
+const modelInputColumns: Array<DataTableColumn<ModelInputRow>> = [
+  { key: "team", header: "Team", render: (row) => row.team },
+  { key: "rating", header: "Rating", render: (row) => row.rating },
+  { key: "attack", header: "Attack", render: (row) => row.attack },
+  { key: "defense", header: "Defense", render: (row) => row.defense },
+  { key: "form", header: "Recent form", render: (row) => row.form },
+  { key: "modelVersion", header: "Model version", render: (row) => row.modelVersion },
+  { key: "assumptions", header: "Assumptions", render: (row) => row.assumptions },
+];
+
+const assumptionRows: AssumptionRow[] = [
+  {
+    area: "Training data",
+    implementation: "Compact local historical sample updates seed ratings.",
+    limitation: "Not a complete international results database.",
+  },
+  {
+    area: "Match context",
+    implementation: "Neutral-venue assumption with rating, form, attack, and defense factors.",
+    limitation: "No injuries, lineups, rest, travel, weather, or tactical matchup feed.",
+  },
+  {
+    area: "Score model",
+    implementation: "Expected goals are converted into a Poisson-style scoreline matrix.",
+    limitation: "Educational baseline, not an out-of-sample forecasting claim.",
+  },
+  {
+    area: "Simulation",
+    implementation: "Deterministic seeds make Monte Carlo runs reproducible.",
+    limitation: "Round-of-32 placement remains approximate until complete official fixtures are curated.",
+  },
+];
+
+const assumptionColumns: Array<DataTableColumn<AssumptionRow>> = [
+  { key: "area", header: "Area", render: (row) => row.area },
+  {
+    key: "implementation",
+    header: "Current implementation",
+    render: (row) => row.implementation,
+  },
+  { key: "limitation", header: "Limitation", render: (row) => row.limitation },
+];
+
+const providerModeLabels: Record<ProviderMode, string> = {
+  LIVE_PROVIDER_MODE: "live provider connected",
+  OFFLINE_DATASET_MODE: "offline dataset mode",
+  SAMPLE_DATASET_MODE: "sample dataset mode",
+};
+
 export default function ModelLabPage() {
-  const backtest = runBacktestScaffold(historicalResults, buildTeamRatings());
+  const ratings = buildTeamRatings();
+  const backtest = runBacktestScaffold(historicalResults, ratings);
+  const modelInputs = buildModelInputRows(ratings, MODEL_VERSION);
+  const providerMode = getProviderMode();
 
   return (
     <Shell>
@@ -48,7 +113,7 @@ export default function ModelLabPage() {
           </h1>
           <p className="mt-4 text-base leading-8 text-zinc-400">
             WorldCup Oracle is an educational sports analytics project. It does
-            not use official FIFA predictions, does not provide betting advice,
+            not use official tournament predictions, does not provide betting advice,
             and does not present sample data as live data.
           </p>
         </div>
@@ -70,6 +135,28 @@ export default function ModelLabPage() {
             );
           })}
         </div>
+      </Section>
+
+      <Section className="pt-0">
+        <DataTable
+          title="Model Input Table"
+          description="The same team-level inputs used by generated predictions. Values come from sample seed data plus local historical updates."
+          columns={modelInputColumns}
+          rows={modelInputs}
+          getRowKey={(row) => row.team}
+          minWidth="1080px"
+        />
+      </Section>
+
+      <Section className="pt-0">
+        <DataTable
+          title="Assumptions Table"
+          description="Plain-language boundaries for what the model does and does not know."
+          columns={assumptionColumns}
+          rows={assumptionRows}
+          getRowKey={(row) => row.area}
+          minWidth="820px"
+        />
       </Section>
 
       <Section className="bg-[#10120d]">
@@ -111,7 +198,9 @@ export default function ModelLabPage() {
                 <dt className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                   Live provider
                 </dt>
-                <dd className="mt-1 text-2xl font-semibold text-white">none</dd>
+                <dd className="mt-1 text-2xl font-semibold text-white">
+                  {providerModeLabels[providerMode]}
+                </dd>
               </div>
               <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
                 <dt className="text-xs uppercase tracking-[0.16em] text-zinc-400">

@@ -3,11 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { Activity, BarChart3, FlaskConical, Gauge, Trophy } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  Database,
+  FlaskConical,
+  Gauge,
+  Trophy,
+} from "lucide-react";
 
 const links: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/", label: "Oracle", icon: Trophy },
   { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
+  { href: "/data-center", label: "Data", icon: Database },
   { href: "/model-lab", label: "Model Lab", icon: FlaskConical },
   { href: "/calibration", label: "Calibration", icon: Gauge },
 ];

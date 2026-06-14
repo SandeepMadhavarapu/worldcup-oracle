@@ -180,7 +180,7 @@ dataset-mode banner is unchanged.
 - `knockout-paths.ts`
 - `source-notes.md`
 
-This layer is intentionally separate from the sample prediction dataset. It includes a small manual seed from FIFA public pages and placeholders for the rest of the official fixture curation workflow. Source notes cite FIFA public tournament and scores/fixtures pages without claiming endorsement or affiliation.
+This layer is intentionally separate from the sample prediction dataset. It includes a small manual seed from public tournament pages and placeholders for the rest of the official fixture curation workflow. Source notes cite public tournament and scores/fixtures pages without claiming endorsement or affiliation.
 
 ## API Routes
 
@@ -296,7 +296,7 @@ See `DEPLOYMENT.md` for the full checklist.
 Notes: raw intro masters must stay out of `public/` and Git; keep them under the
 gitignored `assets-src/intro-preview/` folder and publish only optimized
 derivatives. The football-data key is server-only, live scores are
-provider-dependent, WorldCup Oracle has no official FIFA affiliation, and
+provider-dependent, WorldCup Oracle has no official affiliation, and
 predictions are educational estimates, not betting advice.
 
 ## Limitations
@@ -309,7 +309,7 @@ predictions are educational estimates, not betting advice.
 - The in-memory rate limiter is appropriate for a demo, not a distributed production deployment.
 - Public beta needs durable Supabase/Postgres storage plus shared rate limiting
   before real users rely on saved brackets or leaderboard rankings.
-- Predictions are educational estimates, not official FIFA data and not betting advice.
+- Predictions are educational estimates, not official tournament data and not betting advice.
 - Official fixtures are not fully curated in-repo yet; placeholder rows are explicitly labeled.
 
 ## Future Improvements

@@ -3,7 +3,7 @@ import type { Team } from "@/lib/types";
 export const DATASET_MODE = "sample" as const;
 
 export const DATASET_NOTICE =
-  "Sample Dataset Mode: tournament field, groups, and historical rows are local demo data for engineering review. They are not official FIFA fixtures or live results.";
+  "Sample Dataset Mode: tournament field, groups, and historical rows are local demo data for engineering review. They are not official tournament fixtures or live results.";
 
 export const teams: Team[] = [
   {

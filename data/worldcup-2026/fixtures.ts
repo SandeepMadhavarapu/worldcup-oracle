@@ -10,6 +10,10 @@ export interface WorldCup2026Fixture {
   hostCity: string;
   kickoffTimeLocal?: string;
   status: WorldCup2026FixtureStatus;
+  homeGoals?: number;
+  awayGoals?: number;
+  resultSourceLabel?: string;
+  resultSourceNote?: string;
   sourceLabel: string;
   notes?: string;
 }
@@ -24,8 +28,13 @@ export const worldCup2026Fixtures: WorldCup2026Fixture[] = [
     venue: "Mexico City Stadium",
     hostCity: "Mexico City",
     kickoffTimeLocal: "2026-06-11T19:00:00-06:00",
-    status: "scheduled",
-    sourceLabel: "manual seed from FIFA public scores/fixtures page",
+    status: "completed",
+    homeGoals: 2,
+    awayGoals: 0,
+    resultSourceLabel: "manual public match-report result",
+    resultSourceNote:
+      "Manually curated from public match-report data; this is not a complete official result feed.",
+    sourceLabel: "manual seed from public scores/fixtures and match-report data",
     notes:
       "Seed fixture included to prove the data model. Complete official fixtures should be manually curated before production claims.",
   },

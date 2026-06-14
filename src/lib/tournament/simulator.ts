@@ -30,7 +30,7 @@ import {
   type TournamentSimulationSummary,
 } from "@/lib/types";
 
-const MODEL_VERSION = "worldcup-oracle-baseline-v2";
+export const MODEL_VERSION = "worldcup-oracle-baseline-v2";
 
 const DEFAULT_BRACKET_RESOLUTION: BracketResolutionMetadata = {
   isApproximation: true,

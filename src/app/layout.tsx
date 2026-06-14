@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "WorldCup Oracle",
     description:
-      "Educational World Cup 2026 prediction intelligence, not official FIFA data and not betting advice.",
+      "Educational World Cup 2026 prediction intelligence, not official tournament data and not betting advice.",
     images: [ogImageUrl],
   },
 };

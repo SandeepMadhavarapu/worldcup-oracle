@@ -32,6 +32,12 @@ import {
   YAxis,
 } from "recharts";
 
+import {
+  DataTable,
+  DatasetModeBadge,
+  SourceBadge,
+  type DataTableColumn,
+} from "@/components/data-center";
 import { Card, ProbabilityBar, Section, Shell, StatusPill } from "@/components/ui";
 import { MAX_PUBLIC_SIMULATIONS } from "@/lib/tournament/constants";
 import type {
@@ -52,6 +58,8 @@ interface DashboardClientProps {
   initialSimulation: TournamentSimulationSummary;
   initialLeaderboard: LeaderboardEntry[];
   notice: string;
+  datasetMode: string;
+  providerMode: string;
 }
 
 interface PredictionPayload {
@@ -78,6 +86,20 @@ const tabs: Array<{
   { id: "leaderboard", label: "Leaderboard", icon: Medal },
 ];
 const simulationOptions = [1, 500, MAX_PUBLIC_SIMULATIONS];
+
+interface DashboardSimulationRow {
+  team: string;
+  champion: string;
+  final: string;
+  semifinal: string;
+}
+
+const dashboardSimulationColumns: Array<DataTableColumn<DashboardSimulationRow>> = [
+  { key: "team", header: "Team", render: (row) => row.team },
+  { key: "champion", header: "Champion", render: (row) => row.champion },
+  { key: "final", header: "Final", render: (row) => row.final },
+  { key: "semifinal", header: "Semifinal", render: (row) => row.semifinal },
+];
 
 function pct(value: number, digits = 1): string {
   return `${(value * 100).toFixed(digits)}%`;
@@ -154,6 +176,8 @@ export function DashboardClient({
   initialSimulation,
   initialLeaderboard,
   notice,
+  datasetMode,
+  providerMode,
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<TabId>("groups");
   const [teamAId, setTeamAId] = useState("argentina");
@@ -237,6 +261,18 @@ export function DashboardClient({
     teamMap.get(simulation.analytics.darkHorse.teamId)?.name ?? "TBD";
   const upsetTeam =
     teamMap.get(simulation.analytics.upsetRisk.teamId)?.name ?? "TBD";
+  const providerKind =
+    providerMode === "LIVE_PROVIDER_MODE"
+      ? "live"
+      : providerMode === "OFFLINE_DATASET_MODE"
+        ? "offline"
+        : "sample";
+  const topSimulationRows = simulation.probabilities.slice(0, 6).map((row) => ({
+    team: teamMap.get(row.teamId)?.name ?? row.teamId,
+    champion: pct(row.champion),
+    final: pct(row.final),
+    semifinal: pct(row.semiFinal),
+  }));
 
   const getTeamName = (teamId: string) => teamMap.get(teamId)?.name ?? teamId;
   const getTeamCode = (teamId: string) => teamMap.get(teamId)?.code ?? teamId;
@@ -318,7 +354,7 @@ export function DashboardClient({
       <Section className="bg-[#0b1712] pb-8 pt-10">
         <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr] lg:items-end">
           <div>
-            <StatusPill tone="cyan">Sample Dataset Mode</StatusPill>
+            <StatusPill tone="cyan">Dashboard Projection Mode</StatusPill>
             <h1 className="mt-5 text-4xl font-semibold tracking-normal text-white sm:text-5xl">
               Tournament Intelligence Dashboard
             </h1>
@@ -398,6 +434,29 @@ export function DashboardClient({
             {error}
           </div>
         ) : null}
+        <div className="mt-6 grid gap-4 lg:grid-cols-[360px_1fr]">
+          <Card className="p-5">
+            <div className="flex flex-wrap gap-2">
+              <DatasetModeBadge mode={datasetMode} kind="sample" />
+              <DatasetModeBadge mode={providerMode} kind={providerKind} />
+            </div>
+            <p className="mt-4 text-sm leading-6 text-zinc-400">
+              Dashboard projections use sample model inputs and the current
+              simulation state. Saved leaderboard entries are demo persistence.
+            </p>
+            <div className="mt-4">
+              <SourceBadge kind="demo">In-memory leaderboard</SourceBadge>
+            </div>
+          </Card>
+          <DataTable
+            title="Top Simulation Snapshot"
+            description="Read-only summary from the active dashboard simulation; no extra simulation pass is run."
+            columns={dashboardSimulationColumns}
+            rows={topSimulationRows}
+            getRowKey={(row) => row.team}
+            minWidth="560px"
+          />
+        </div>
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[
             {

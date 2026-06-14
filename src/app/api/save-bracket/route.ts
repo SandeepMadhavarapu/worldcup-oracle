@@ -1,8 +1,10 @@
 import { apiHandler } from "@/lib/api/handler";
-import { jsonOk } from "@/lib/api/http";
+import { jsonOk, readJsonBody } from "@/lib/api/http";
 import { enforceRateLimit } from "@/lib/api/rate-limit";
 import { saveBracketRequestSchema } from "@/lib/api/schemas";
 import { saveDemoBracket } from "@/lib/leaderboard/store";
+
+const JSON_BODY_MAX_BYTES = 4_096;
 
 export const POST = apiHandler(async (request, { requestId }) => {
   const rateLimited = enforceRateLimit(request, {
@@ -15,7 +17,9 @@ export const POST = apiHandler(async (request, { requestId }) => {
     return rateLimited;
   }
 
-  const payload = saveBracketRequestSchema.parse(await request.json());
+  const payload = saveBracketRequestSchema.parse(
+    await readJsonBody(request, { maxBytes: JSON_BODY_MAX_BYTES }),
+  );
   const entry = await saveDemoBracket(payload);
 
   return jsonOk(

@@ -1,10 +1,12 @@
 import { buildTeamRatings } from "@/lib/prediction/elo";
 import { predictMatch } from "@/lib/prediction/match";
 import { apiHandler } from "@/lib/api/handler";
-import { jsonOk } from "@/lib/api/http";
+import { jsonOk, readJsonBody } from "@/lib/api/http";
 import { enforceRateLimit } from "@/lib/api/rate-limit";
 import { predictMatchRequestSchema } from "@/lib/api/schemas";
 import { DATASET_MODE, getProviderMode, getProviderNotice } from "@/lib/data";
+
+const JSON_BODY_MAX_BYTES = 4_096;
 
 export const POST = apiHandler(async (request, { requestId }) => {
   const rateLimited = enforceRateLimit(request, {
@@ -17,7 +19,9 @@ export const POST = apiHandler(async (request, { requestId }) => {
     return rateLimited;
   }
 
-  const payload = predictMatchRequestSchema.parse(await request.json());
+  const payload = predictMatchRequestSchema.parse(
+    await readJsonBody(request, { maxBytes: JSON_BODY_MAX_BYTES }),
+  );
   const prediction = predictMatch(
     payload.teamAId,
     payload.teamBId,

@@ -54,7 +54,7 @@ describe("team resolver", () => {
     expect(normalizeTeamName("Côte d'Ivoire")).toBe("cotedivoire");
   });
 
-  it("resolves by FIFA tri-code first", () => {
+  it("resolves by association tri-code first", () => {
     expect(resolveTeamId({ name: "anything", code: "ARG" })).toBe("argentina");
     expect(resolveTeamId({ name: "ignored", code: "fra" })).toBe("france");
   });

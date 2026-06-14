@@ -7,7 +7,7 @@ export const WORLD_CUP_2026_DATASET_MODE =
   "2026_TOURNAMENT_DATASET_MODE" as const;
 
 export const WORLD_CUP_2026_DATASET_NOTICE =
-  "2026 Tournament Dataset Mode: official-data-ready structure with a small manually curated seed. Placeholder rows are not official fixtures.";
+  "2026 Tournament Dataset Mode: incomplete official-data-ready static seed with one manually curated completed result. Placeholder rows are not official fixtures.";
 
 export function getWorldCup2026Dataset() {
   return {

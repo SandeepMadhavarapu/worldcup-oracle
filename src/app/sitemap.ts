@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     "",
     "/dashboard",
+    "/data-center",
     "/model-lab",
     "/calibration",
     ...teams.map((team) => `/teams/${team.id}`),

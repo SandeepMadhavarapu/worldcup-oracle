@@ -1,4 +1,4 @@
-import { getProviderNotice, teams } from "@/lib/data";
+import { DATASET_MODE, getProviderMode, getProviderNotice, teams } from "@/lib/data";
 import { buildTeamRatings } from "@/lib/prediction/elo";
 import { getLeaderboard } from "@/lib/leaderboard/store";
 import { runTournamentSimulation } from "@/lib/tournament/simulator";
@@ -22,6 +22,8 @@ export default async function DashboardPage() {
         initialSimulation={simulation}
         initialLeaderboard={await getLeaderboard()}
         notice={getProviderNotice()}
+        datasetMode={DATASET_MODE}
+        providerMode={getProviderMode()}
       />
     </>
   );

@@ -15,6 +15,22 @@ interface JsonOkOptions {
   requestId?: string;
 }
 
+export interface ReadJsonBodyOptions {
+  maxBytes: number;
+}
+
+class ApiRequestError extends Error {
+  constructor(
+    public readonly code: string,
+    public readonly clientMessage: string,
+    public readonly status: number,
+    public readonly details?: unknown,
+  ) {
+    super(clientMessage);
+    this.name = "ApiRequestError";
+  }
+}
+
 export function jsonOk<T>(data: T, options?: JsonOkOptions): Response {
   const requestId = options?.requestId ?? createRequestId();
   const headers = new Headers(options?.headers);
@@ -60,9 +76,75 @@ function isJsonParseError(error: Error): boolean {
   );
 }
 
+function baseContentType(contentType: string): string {
+  return contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+}
+
+function measuredBytes(value: string): number {
+  return new TextEncoder().encode(value).length;
+}
+
+export async function readJsonBody(
+  request: Request,
+  { maxBytes }: ReadJsonBodyOptions,
+): Promise<unknown> {
+  const contentType = request.headers.get("content-type");
+  if (!contentType || baseContentType(contentType) !== "application/json") {
+    throw new ApiRequestError(
+      "UNSUPPORTED_MEDIA_TYPE",
+      "Expected Content-Type: application/json.",
+      415,
+    );
+  }
+
+  const contentLength = request.headers.get("content-length");
+  if (contentLength) {
+    const contentLengthBytes = Number(contentLength);
+    if (Number.isFinite(contentLengthBytes) && contentLengthBytes > maxBytes) {
+      throw new ApiRequestError(
+        "PAYLOAD_TOO_LARGE",
+        `JSON body must be ${maxBytes.toLocaleString()} bytes or less.`,
+        413,
+        { maxBytes },
+      );
+    }
+  }
+
+  let bodyText: string;
+  try {
+    bodyText = await request.text();
+  } catch {
+    throw new ApiRequestError(
+      "INVALID_JSON",
+      "Invalid JSON body. Please check the request payload.",
+      400,
+    );
+  }
+
+  if (measuredBytes(bodyText) > maxBytes) {
+    throw new ApiRequestError(
+      "PAYLOAD_TOO_LARGE",
+      `JSON body must be ${maxBytes.toLocaleString()} bytes or less.`,
+      413,
+      { maxBytes },
+    );
+  }
+
+  try {
+    return JSON.parse(bodyText);
+  } catch {
+    throw new ApiRequestError(
+      "INVALID_JSON",
+      "Invalid JSON body. Please check the request payload.",
+      400,
+    );
+  }
+}
+
 /**
  * Maps a thrown value to a safe, typed error envelope. The contract:
  *
+ *  - Request body guard failures -> explicit 415/413/400 typed envelopes.
  *  - Zod failures -> 422 with field-level details (messages we authored).
  *  - Malformed JSON bodies -> 400 with a generic, parser-free message.
  *  - Anything else is treated as an UNEXPECTED INTERNAL error: it is logged
@@ -72,6 +154,16 @@ function isJsonParseError(error: Error): boolean {
  *    leak — in any environment, production included.
  */
 export function handleRouteError(error: unknown, requestId?: string): Response {
+  if (error instanceof ApiRequestError) {
+    return jsonError(
+      error.code,
+      error.clientMessage,
+      error.status,
+      error.details,
+      requestId,
+    );
+  }
+
   if (error instanceof ZodError) {
     return jsonError(
       "VALIDATION_ERROR",

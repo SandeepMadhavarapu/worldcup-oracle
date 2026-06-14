@@ -27,7 +27,7 @@ export function DatasetBanner({
           Portfolio Demo Mode
         </span>
         <span className="text-amber-50/80">
-          {mode}: {notice} No FIFA affiliation. Not betting advice.
+          {mode}: {notice} No official affiliation. Not betting advice.
         </span>
       </div>
     </div>
