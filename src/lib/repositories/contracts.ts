@@ -1,9 +1,5 @@
 import type { ResolvedMatch } from "@/lib/calibration/types";
-import type {
-  LeaderboardEntry,
-  SingleTournamentSimulation,
-  TournamentSimulationSummary,
-} from "@/lib/types";
+import type { LeaderboardEntry } from "@/lib/types";
 
 export interface BracketSubmission {
   name: string;
@@ -18,13 +14,4 @@ export interface ResolvedMatchRepository {
 export interface LeaderboardRepository {
   list: () => Promise<LeaderboardEntry[]>;
   saveDemoBracket: (input: BracketSubmission) => Promise<LeaderboardEntry>;
-}
-
-export interface BracketRepository {
-  save: (input: BracketSubmission) => Promise<LeaderboardEntry>;
-}
-
-export interface SimulationRepository {
-  saveRun: (summary: TournamentSimulationSummary) => Promise<void>;
-  saveSinglePath: (simulation: SingleTournamentSimulation) => Promise<void>;
 }

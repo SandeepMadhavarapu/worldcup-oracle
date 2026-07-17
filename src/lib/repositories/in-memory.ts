@@ -3,11 +3,9 @@ import { getLiveResolvedMatches } from "@/lib/calibration/live-results-service";
 import { getBaselineSimulation } from "@/lib/tournament/baseline";
 import type { LeaderboardEntry } from "@/lib/types";
 import type {
-  BracketRepository,
   BracketSubmission,
   LeaderboardRepository,
   ResolvedMatchRepository,
-  SimulationRepository,
 } from "@/lib/repositories/contracts";
 
 const demoEntries: LeaderboardEntry[] = [
@@ -98,21 +96,6 @@ export const inMemoryLeaderboardRepository: LeaderboardRepository = {
 
     getStore().push(entry);
     return entry;
-  },
-};
-
-export const inMemoryBracketRepository: BracketRepository = {
-  save(input) {
-    return inMemoryLeaderboardRepository.saveDemoBracket(input);
-  },
-};
-
-export const inMemorySimulationRepository: SimulationRepository = {
-  async saveRun() {
-    // Demo adapter intentionally does not persist simulation runs.
-  },
-  async saveSinglePath() {
-    // Demo adapter intentionally does not persist bracket paths.
   },
 };
 

@@ -1,12 +1,12 @@
 import { DATASET_MODE } from "@/lib/data/teams";
 import type { ApiMeta, ProviderMode } from "@/lib/types";
 
-type LiveProvider = "none" | "football-data" | "api-football";
+type LiveProvider = "none" | "football-data";
 
 function readProvider(): LiveProvider {
   const provider = process.env.LIVE_DATA_PROVIDER;
 
-  if (provider === "football-data" || provider === "api-football") {
+  if (provider === "football-data") {
     return provider;
   }
 
@@ -17,10 +17,6 @@ export function getProviderMode(): ProviderMode {
   const provider = readProvider();
 
   if (provider === "football-data" && process.env.FOOTBALL_DATA_API_KEY) {
-    return "LIVE_PROVIDER_MODE";
-  }
-
-  if (provider === "api-football" && process.env.API_FOOTBALL_KEY) {
     return "LIVE_PROVIDER_MODE";
   }
 

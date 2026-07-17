@@ -30,9 +30,8 @@ export type SourceKind =
   | "illustrative";
 
 export interface ProviderConnectionStatus {
-  selectedProvider: "none" | "football-data" | "api-football" | "unknown";
+  selectedProvider: "none" | "football-data" | "unknown";
   footballDataConnected: boolean;
-  apiFootballConnected: boolean;
   liveProviderAvailable: boolean;
 }
 
@@ -167,7 +166,7 @@ export interface DataCenterSnapshot {
 
 type ProviderEnv = Partial<
   Record<
-    "LIVE_DATA_PROVIDER" | "FOOTBALL_DATA_API_KEY" | "API_FOOTBALL_KEY",
+    "LIVE_DATA_PROVIDER" | "FOOTBALL_DATA_API_KEY",
     string
   >
 >;
@@ -224,7 +223,7 @@ function configuredProvider(env: ProviderEnv): ProviderConnectionStatus["selecte
     return "none";
   }
 
-  if (provider === "football-data" || provider === "api-football") {
+  if (provider === "football-data") {
     return provider;
   }
 
@@ -235,20 +234,15 @@ export function buildProviderConnectionStatus(
   env: ProviderEnv = {
     LIVE_DATA_PROVIDER: process.env.LIVE_DATA_PROVIDER,
     FOOTBALL_DATA_API_KEY: process.env.FOOTBALL_DATA_API_KEY,
-    API_FOOTBALL_KEY: process.env.API_FOOTBALL_KEY,
   },
 ): ProviderConnectionStatus {
   const selectedProvider = configuredProvider(env);
   const footballDataConnected =
     selectedProvider === "football-data" && Boolean(env.FOOTBALL_DATA_API_KEY);
-  const apiFootballConnected =
-    selectedProvider === "api-football" && Boolean(env.API_FOOTBALL_KEY);
-
   return {
     selectedProvider,
     footballDataConnected,
-    apiFootballConnected,
-    liveProviderAvailable: footballDataConnected || apiFootballConnected,
+    liveProviderAvailable: footballDataConnected,
   };
 }
 

@@ -34,7 +34,6 @@ Optional for current demo:
 LIVE_DATA_PROVIDER=none
 NEXT_PUBLIC_SITE_URL=https://your-vercel-deployment-url.vercel.app
 FOOTBALL_DATA_API_KEY=
-API_FOOTBALL_KEY=
 DATABASE_URL=
 ```
 

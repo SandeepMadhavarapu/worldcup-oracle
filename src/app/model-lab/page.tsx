@@ -11,7 +11,6 @@ import { DataTable, type DataTableColumn } from "@/components/data-center";
 import { Card, Section, Shell, StatusPill } from "@/components/ui";
 import { getProviderMode, getProviderNotice, historicalResults } from "@/lib/data";
 import { buildTeamRatings } from "@/lib/prediction/elo";
-import { runBacktestScaffold } from "@/lib/prediction/backtest";
 import {
   buildModelInputRows,
   type ModelInputRow,
@@ -99,7 +98,6 @@ const providerModeLabels: Record<ProviderMode, string> = {
 
 export default function ModelLabPage() {
   const ratings = buildTeamRatings();
-  const backtest = runBacktestScaffold(historicalResults, ratings);
   const modelInputs = buildModelInputRows(ratings, MODEL_VERSION);
   const providerMode = getProviderMode();
 
@@ -218,36 +216,17 @@ export default function ModelLabPage() {
           <div className="flex items-center gap-3">
             <FlaskConical className="size-6 text-cyan-200" aria-hidden="true" />
             <h2 className="text-2xl font-semibold text-white">
-              Backtesting Scaffold
+              Model Evaluation Status
             </h2>
           </div>
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
-                Evaluable sample rows
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-white">
-                {backtest.evaluatedMatches}
-              </p>
-            </div>
-            <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
-                Log loss
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-white">
-                {backtest.logLoss?.toFixed(3) ?? "N/A"}
-              </p>
-            </div>
-            <div className="rounded-md border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
-                Brier score
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-white">
-                {backtest.brierScore?.toFixed(3) ?? "N/A"}
-              </p>
-            </div>
-          </div>
-          <p className="mt-5 text-sm leading-7 text-zinc-400">{backtest.note}</p>
+          <p className="mt-5 text-sm leading-7 text-zinc-400">
+            No out-of-sample evaluation has been published yet. The compact
+            sample dataset that seeds the ratings is the same data the model was
+            tuned on, so self-graded metrics over it would not be honest accuracy
+            claims and are intentionally not shown. Real accuracy reporting lands
+            on the Calibration page as official results resolve through the live
+            feed.
+          </p>
         </Card>
       </Section>
     </Shell>

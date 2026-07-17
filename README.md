@@ -232,7 +232,6 @@ Copy `.env.example` to `.env.local` for provider/database work.
 LIVE_DATA_PROVIDER=none
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 FOOTBALL_DATA_API_KEY=
-API_FOOTBALL_KEY=
 DATABASE_URL=
 ```
 
