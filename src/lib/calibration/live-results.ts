@@ -84,13 +84,37 @@ export function buildResolvedMatchesFromLive(
   matches: LiveMatch[],
   ratings: Map<string, TeamRating> = buildTeamRatings(),
 ): ResolvedMatch[] {
-  return matches
-    .map((match) => liveMatchToResolvedMatch(match, ratings))
-    .filter((match): match is ResolvedMatch => match !== null)
-    .sort((left, right) => {
-      const byTime = Date.parse(left.kickoff) - Date.parse(right.kickoff);
-      return byTime !== 0 ? byTime : left.id.localeCompare(right.id);
-    });
+  const dropped: string[] = [];
+  const resolved: ResolvedMatch[] = [];
+
+  for (const match of matches) {
+    const graded = liveMatchToResolvedMatch(match, ratings);
+
+    if (graded) {
+      resolved.push(graded);
+    } else if (match.status === "finished") {
+      // A FINISHED match we could not grade (usually an unmapped team name) is
+      // silent data loss for the calibration page — make it visible to
+      // operators without breaking the honest-drop behavior.
+      dropped.push(`${match.homeName} vs ${match.awayName} (${match.id})`);
+    }
+  }
+
+  if (dropped.length > 0 && process.env.NODE_ENV !== "test") {
+    console.warn(
+      JSON.stringify({
+        level: "warn",
+        msg: "calibration_unresolved_finished_matches",
+        count: dropped.length,
+        matches: dropped.slice(0, 10),
+      }),
+    );
+  }
+
+  return resolved.sort((left, right) => {
+    const byTime = Date.parse(left.kickoff) - Date.parse(right.kickoff);
+    return byTime !== 0 ? byTime : left.id.localeCompare(right.id);
+  });
 }
 
 /**

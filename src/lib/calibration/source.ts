@@ -24,16 +24,33 @@ export interface CalibrationSource {
 
 export const ILLUSTRATIVE_LABEL = "Illustrative — no real matches resolved yet";
 
+/**
+ * Below this many resolved real matches, accuracy numbers are statistically
+ * noise. We still switch to the real source (never blend), but the label and
+ * note must say the sample is too small to support accuracy claims.
+ */
+export const SMALL_SAMPLE_THRESHOLD = 10;
+
 export const ILLUSTRATIVE_NOTE =
   "No World Cup matches have resolved through the live feed yet, so this diagram is built from synthetic matches: each is forecast by the real engine, then its outcome is sampled from that same forecast with a fixed seed. It is calibrated by construction — an illustration of what good calibration looks like, not evidence of real-world accuracy. It will switch to real results automatically once matches finish.";
 
 export function liveLabel(count: number): string {
+  if (count < SMALL_SAMPLE_THRESHOLD) {
+    return `Early real results (${count} resolved — sample too small for accuracy claims)`;
+  }
+
   return `Live accuracy vs real results (${count} resolved)`;
 }
 
 export function liveNote(count: number): string {
   const matchWord = count === 1 ? "match" : "matches";
-  return `Graded against ${count} real World Cup ${matchWord} resolved through the live feed. Each forecast is the engine's pre-match win/draw/loss probability; each outcome is the real final score. This is genuine accuracy, not a self-graded sample.`;
+  const base = `Graded against ${count} real World Cup ${matchWord} resolved through the live feed. Each forecast is the engine's pre-match win/draw/loss probability; each outcome is the real final score.`;
+
+  if (count < SMALL_SAMPLE_THRESHOLD) {
+    return `${base} With fewer than ${SMALL_SAMPLE_THRESHOLD} resolved matches this is a progress view, not a statistically meaningful accuracy measurement.`;
+  }
+
+  return `${base} This is genuine accuracy, not a self-graded sample.`;
 }
 
 /**

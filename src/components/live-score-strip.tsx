@@ -135,9 +135,26 @@ export function LiveScoreStrip() {
       }
     }
 
+    function handleVisibility() {
+      if (cancelled) {
+        return;
+      }
+
+      if (document.hidden) {
+        // Stop polling in hidden tabs — the next poll is scheduled on return.
+        clearTimeout(pollTimer);
+      } else {
+        clearTimeout(pollTimer);
+        poll();
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility);
+
     poll();
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
       cancelled = true;
       clearTimeout(pollTimer);
       clearTimeout(flashTimer);
