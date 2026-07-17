@@ -109,6 +109,11 @@ Real productionization would need:
 
 ## Prediction Model
 
+Every constant in the model is documented with its rationale in
+[`docs/model-notes.md`](docs/model-notes.md), including the simplifications
+(penalty coin-flip, tiebreak jitter, R32 approximation) and the provenance of
+the sample data.
+
 The model is a practical baseline, not a claim of real forecasting superiority.
 
 1. Teams start with seed rating, attack, defense, form, and World Cup pedigree.

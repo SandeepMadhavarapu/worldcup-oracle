@@ -16,6 +16,11 @@ create table teams (
   updated_at timestamptz not null default now()
 );
 
+-- NOTE ON FOREIGN KEYS: home/away ids here are intentionally NOT constrained
+-- to teams(id). The teams table holds only the 48-team tournament field, while
+-- a real historical ingest contains hundreds of national teams; constraining
+-- would force either a bloated teams table or silent row drops. Referential
+-- quality is enforced at ingest time instead.
 create table historical_results (
   id bigserial primary key,
   match_date date not null,
@@ -29,7 +34,9 @@ create table historical_results (
   ),
   source text not null default 'sample',
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  -- The same fixture cannot be ingested twice; re-imports must upsert.
+  unique (match_date, home_team_id, away_team_id, competition)
 );
 
 create table tournament_groups (
@@ -69,6 +76,9 @@ create table fixtures (
 );
 
 create table matches (
+  -- Text PK on purpose: ids mirror the deterministic fixture ids the simulator
+  -- emits ("A-1", "round-of-32-3"), which keeps simulated and stored matches
+  -- joinable without a mapping table. Everything user-generated uses uuid.
   id text primary key,
   tournament_year integer not null default 2026,
   stage text not null,
@@ -132,17 +142,41 @@ create table user_brackets (
   updated_at timestamptz not null default now()
 );
 
-create table leaderboard_entries (
-  id uuid primary key default gen_random_uuid(),
-  user_bracket_id uuid references user_brackets(id) on delete cascade,
-  display_name text not null,
-  score integer not null default 0,
-  champion_team_id text not null references teams(id),
-  finalist_team_id text references teams(id),
-  mode text not null default 'demo',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+-- The leaderboard is a VIEW over user_brackets rather than a second table:
+-- a denormalized copy (display_name/score/teams duplicated) would drift the
+-- moment a bracket is rescored, and nothing here needs the extra write path.
+create view leaderboard_entries as
+select
+  id,
+  display_name,
+  score,
+  champion_team_id,
+  finalist_team_id,
+  mode,
+  created_at
+from user_brackets
+order by score desc, created_at asc;
+
+-- Keep updated_at truthful: without this trigger the column silently lies.
+create or replace function set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end $$;
+
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'teams', 'historical_results', 'dataset_versions', 'fixtures',
+    'matches', 'predictions', 'simulations', 'model_runs', 'user_brackets'
+  ] loop
+    execute format(
+      'create trigger %I_set_updated_at before update on %I
+         for each row execute function set_updated_at()', t, t);
+  end loop;
+end $$;
 
 create index historical_results_date_idx on historical_results(match_date);
 create index predictions_match_idx on predictions(home_team_id, away_team_id);
@@ -151,10 +185,13 @@ create index fixtures_kickoff_idx on fixtures(kickoff_time_local);
 create index simulations_created_at_idx on simulations(created_at desc);
 create index model_runs_created_at_idx on model_runs(created_at desc);
 create index user_brackets_score_idx on user_brackets(score desc);
-create index leaderboard_entries_score_idx on leaderboard_entries(score desc);
 
--- Supabase RLS-ready notes:
--- alter table user_brackets enable row level security;
--- alter table leaderboard_entries enable row level security;
--- Public read policies can expose leaderboard rows, while insert/update policies
--- should require auth.uid() ownership once real authentication is connected.
+-- Row Level Security: enabled NOW so user-generated tables are deny-all by
+-- default the moment this schema is applied. Policies are added alongside real
+-- authentication; until then the service role key (server-side only) is the
+-- sole writer, which is the correct posture for the demo API.
+alter table user_brackets enable row level security;
+-- Example policies to activate with auth:
+-- create policy "public read" on user_brackets for select using (true);
+-- create policy "own rows" on user_brackets for insert
+--   with check (auth.uid() = user_id);
