@@ -826,7 +826,17 @@ export function DashboardClient({
                       Champion Probability
                     </h2>
                   </div>
-                  <div className="relative mt-5 h-[320px] min-h-[320px] min-w-0">
+                  <p className="sr-only">
+                    {`Champion probability chart. Top teams: ${championData
+                      .slice(0, 3)
+                      .map((row) => `${row.name} ${row.champion}%`)
+                      .join(", ")}. Full values appear in the round probability table below.`}
+                  </p>
+                  <div
+                    className="relative mt-5 h-[320px] min-h-[320px] min-w-0"
+                    role="img"
+                    aria-label={`Bar chart of champion probability for the top ${championData.length} teams. Values are listed in the adjacent text summary and table.`}
+                  >
                     {isSimulating ? (
                       <div
                         className="absolute inset-0 z-10 grid place-items-center rounded-md bg-[#0b1712]/70 backdrop-blur-sm"
