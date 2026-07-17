@@ -55,6 +55,44 @@ function summarizeOutcome(scorelines: ScorelineProbability[]) {
   );
 }
 
+/**
+ * The minimal deterministic core shared by the full explainable prediction and
+ * the Monte Carlo simulator: expected goals plus win/draw/loss mass from the
+ * Poisson scoreline grid. Given a fixed ratings map this is a pure function of
+ * the team pair, which is what makes per-run memoization in the simulator
+ * sound.
+ */
+export interface MatchOdds {
+  expectedGoals: { teamA: number; teamB: number };
+  probabilities: { teamAWin: number; draw: number; teamBWin: number };
+}
+
+export function computeMatchOdds(
+  teamAId: string,
+  teamBId: string,
+  ratings: Map<string, TeamRating>,
+): MatchOdds {
+  const teamA = getTeamOrThrow(teamAId);
+  const teamB = getTeamOrThrow(teamBId);
+  const ratingA = ratings.get(teamAId);
+  const ratingB = ratings.get(teamBId);
+
+  if (!ratingA || !ratingB) {
+    throw new Error("Ratings are missing for one or both teams");
+  }
+
+  const expectedTeamA = expectedGoalsFor(teamA, teamB, ratingA, ratingB);
+  const expectedTeamB = expectedGoalsFor(teamB, teamA, ratingB, ratingA);
+  const probabilities = summarizeOutcome(
+    createScorelineDistribution(expectedTeamA, expectedTeamB),
+  );
+
+  return {
+    expectedGoals: { teamA: expectedTeamA, teamB: expectedTeamB },
+    probabilities,
+  };
+}
+
 function expectedGoalsFor(
   team: Team,
   opponent: Team,

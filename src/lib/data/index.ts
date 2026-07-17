@@ -33,14 +33,22 @@ export {
   teams,
 };
 
+let teamsByGroupCache: Record<GroupCode, typeof teams> | null = null;
+
 export function getTeamsByGroup(): Record<GroupCode, typeof teams> {
-  return GROUP_CODES.reduce(
-    (groups, groupCode) => {
-      groups[groupCode] = teams.filter((team) => team.group === groupCode);
-      return groups;
-    },
-    {} as Record<GroupCode, typeof teams>,
-  );
+  // The team list is static module data, so the grouping is computed once.
+  // (The simulator calls this in its hot path: 12 groups x N iterations.)
+  if (!teamsByGroupCache) {
+    teamsByGroupCache = GROUP_CODES.reduce(
+      (groups, groupCode) => {
+        groups[groupCode] = teams.filter((team) => team.group === groupCode);
+        return groups;
+      },
+      {} as Record<GroupCode, typeof teams>,
+    );
+  }
+
+  return teamsByGroupCache;
 }
 
 export function getTeamOrThrow(teamId: string) {

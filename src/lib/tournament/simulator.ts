@@ -1,6 +1,6 @@
 import { DATASET_MODE, teams } from "@/lib/data";
 import { buildTeamRatings } from "@/lib/prediction/elo";
-import { predictMatch } from "@/lib/prediction/match";
+import { computeMatchOdds, type MatchOdds } from "@/lib/prediction/match";
 import { round } from "@/lib/prediction/math";
 import { createSeededRandom, samplePoisson, weightedChoice } from "@/lib/prediction/random";
 import {
@@ -31,6 +31,34 @@ import {
 } from "@/lib/types";
 
 export const MODEL_VERSION = "worldcup-oracle-baseline-v2";
+
+/**
+ * Per-run memo of pairwise match odds. Ratings are FIXED for the lifetime of a
+ * simulation run, so the odds for a given (home, away) pair are deterministic —
+ * there is no reason to rebuild the Poisson scoreline grid ~100k times per
+ * 1,000-iteration run when at most 48x47 distinct pairs exist. This memo (plus
+ * skipping explanation-string generation entirely on the simulation path) is
+ * what keeps the public simulate endpoint cheap.
+ */
+export type OddsProvider = (homeTeamId: string, awayTeamId: string) => MatchOdds;
+
+export function createOddsProvider(
+  ratings: Map<string, TeamRating>,
+): OddsProvider {
+  const cache = new Map<string, MatchOdds>();
+
+  return (homeTeamId, awayTeamId) => {
+    const key = `${homeTeamId}|${awayTeamId}`;
+    let odds = cache.get(key);
+
+    if (!odds) {
+      odds = computeMatchOdds(homeTeamId, awayTeamId, ratings);
+      cache.set(key, odds);
+    }
+
+    return odds;
+  };
+}
 
 const DEFAULT_BRACKET_RESOLUTION: BracketResolutionMetadata = {
   isApproximation: true,
@@ -70,13 +98,13 @@ function simulateScheduledMatch(
   stage: string,
   homeTeamId: string,
   awayTeamId: string,
-  ratings: Map<string, TeamRating>,
+  getOdds: OddsProvider,
   seed: string,
   forceWinner = false,
   group?: GroupCode,
 ): SimulatedMatch {
   const random = createSeededRandom(`${seed}:${id}:${homeTeamId}:${awayTeamId}`);
-  const prediction = predictMatch(homeTeamId, awayTeamId, ratings);
+  const prediction = getOdds(homeTeamId, awayTeamId);
   const homeGoals = samplePoisson(prediction.expectedGoals.teamA, random);
   const awayGoals = samplePoisson(prediction.expectedGoals.teamB, random);
   let winnerTeamId: string | undefined;
@@ -115,6 +143,7 @@ function simulateScheduledMatch(
 
 function simulateGroupStage(
   ratings: Map<string, TeamRating>,
+  getOdds: OddsProvider,
   seed: string,
 ): {
   groupTables: Record<GroupCode, StandingRow[]>;
@@ -129,7 +158,7 @@ function simulateGroupStage(
       fixture.stage,
       fixture.homeTeamId,
       fixture.awayTeamId,
-      ratings,
+      getOdds,
       seed,
       false,
       fixture.group,
@@ -167,7 +196,7 @@ function simulateGroupStage(
 function simulateKnockoutRound(
   name: KnockoutRound["name"],
   pairings: Array<[string, string]>,
-  ratings: Map<string, TeamRating>,
+  getOdds: OddsProvider,
   seed: string,
 ): RoundResult {
   const matches = pairings.map(([homeTeamId, awayTeamId], index) =>
@@ -176,7 +205,7 @@ function simulateKnockoutRound(
       name,
       homeTeamId,
       awayTeamId,
-      ratings,
+      getOdds,
       seed,
       true,
     ),
@@ -204,8 +233,9 @@ function pairSequentially(teamIds: string[]): Array<[string, string]> {
 export function simulateSingleTournament(
   seed: string,
   ratings: Map<string, TeamRating> = buildTeamRatings(),
+  getOdds: OddsProvider = createOddsProvider(ratings),
 ): SingleTournamentSimulation {
-  const groupStage = simulateGroupStage(ratings, seed);
+  const groupStage = simulateGroupStage(ratings, getOdds, seed);
   const roundOf32Resolution = resolveRoundOf32PathsWithMetadata(
     groupStage.groupTables,
     groupStage.bestThirdPlace,
@@ -216,37 +246,37 @@ export function simulateSingleTournament(
   const roundOf32 = simulateKnockoutRound(
     "Round of 32",
     roundOf32Pairings,
-    ratings,
+    getOdds,
     `${seed}:r32`,
   );
   const roundOf16 = simulateKnockoutRound(
     "Round of 16",
     pairSequentially(roundOf32.winners),
-    ratings,
+    getOdds,
     `${seed}:r16`,
   );
   const quarterFinals = simulateKnockoutRound(
     "Quarter-finals",
     pairSequentially(roundOf16.winners),
-    ratings,
+    getOdds,
     `${seed}:qf`,
   );
   const semiFinals = simulateKnockoutRound(
     "Semi-finals",
     pairSequentially(quarterFinals.winners),
-    ratings,
+    getOdds,
     `${seed}:sf`,
   );
   const thirdPlace = simulateKnockoutRound(
     "Third-place",
     [[semiFinals.losers[0] ?? "", semiFinals.losers[1] ?? ""]],
-    ratings,
+    getOdds,
     `${seed}:third`,
   );
   const final = simulateKnockoutRound(
     "Final",
     [[semiFinals.winners[0] ?? "", semiFinals.winners[1] ?? ""]],
-    ratings,
+    getOdds,
     `${seed}:final`,
   );
 
@@ -393,13 +423,14 @@ export function runTournamentSimulation({
     Math.min(MAX_PUBLIC_SIMULATIONS, Math.floor(iterations)),
   );
   const counters = new Map(teams.map((team) => [team.id, createCounter()]));
+  const getOdds = createOddsProvider(ratings);
   const finalPairCounts = new Map<string, number>();
   const championPaths: ChampionPath[] = [];
   let firstSimulation: SingleTournamentSimulation | undefined;
   let bracketResolution: BracketResolutionMetadata | undefined;
 
   for (let index = 0; index < boundedIterations; index += 1) {
-    const simulation = simulateSingleTournament(`${seed}:${index}`, ratings);
+    const simulation = simulateSingleTournament(`${seed}:${index}`, ratings, getOdds);
 
     if (!firstSimulation) {
       firstSimulation = simulation;
@@ -472,7 +503,7 @@ export function runTournamentSimulation({
     ["", 0];
   const [teamAId = "", teamBId = ""] = likelyFinalKey.split("|");
   const representativeSimulation =
-    firstSimulation ?? simulateSingleTournament(seed, ratings);
+    firstSimulation ?? simulateSingleTournament(seed, ratings, getOdds);
 
   return {
     datasetMode: DATASET_MODE,
