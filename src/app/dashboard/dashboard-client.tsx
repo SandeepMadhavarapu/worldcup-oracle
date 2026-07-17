@@ -1,36 +1,19 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition } from "react";
-import Link from "next/link";
 import {
   Activity,
   AlertTriangle,
   BarChart3,
-  BrainCircuit,
   ClipboardList,
   Dices,
   Gauge,
-  LineChart,
-  Loader2,
   Medal,
-  Save,
-  Share2,
-  ShieldCheck,
-  Sparkles,
   Trophy,
   Users,
   Zap,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 
 import {
   DataTable,
@@ -38,17 +21,20 @@ import {
   SourceBadge,
   type DataTableColumn,
 } from "@/components/data-center";
-import { Card, ProbabilityBar, Section, Shell, StatusPill } from "@/components/ui";
-import { MAX_PUBLIC_SIMULATIONS } from "@/lib/tournament/constants";
+import { Card, Section, Shell, StatusPill } from "@/components/ui";
 import type {
   LeaderboardEntry,
   MatchPrediction,
-  QualificationStatus,
   Team,
   TeamRating,
   TournamentSimulationSummary,
-  ApiResponse,
 } from "@/lib/types";
+import { GroupsTab } from "./tabs/groups-tab";
+import { LeaderboardTab } from "./tabs/leaderboard-tab";
+import { PredictorTab } from "./tabs/predictor-tab";
+import { SimulatorTab } from "./tabs/simulator-tab";
+import { TeamsTab } from "./tabs/teams-tab";
+import { pct, readApi } from "./tabs/shared";
 
 type TabId = "groups" | "predictor" | "simulator" | "teams" | "leaderboard";
 
@@ -85,7 +71,6 @@ const tabs: Array<{
   { id: "teams", label: "Teams", icon: Users },
   { id: "leaderboard", label: "Leaderboard", icon: Medal },
 ];
-const simulationOptions = [1, 500, MAX_PUBLIC_SIMULATIONS];
 
 interface DashboardSimulationRow {
   team: string;
@@ -100,75 +85,6 @@ const dashboardSimulationColumns: Array<DataTableColumn<DashboardSimulationRow>>
   { key: "final", header: "Final", render: (row) => row.final },
   { key: "semifinal", header: "Semifinal", render: (row) => row.semifinal },
 ];
-
-function pct(value: number, digits = 1): string {
-  return `${(value * 100).toFixed(digits)}%`;
-}
-
-function statusTone(status: QualificationStatus) {
-  if (status === "qualified") {
-    return "emerald";
-  }
-
-  if (status === "third-place bubble") {
-    return "amber";
-  }
-
-  if (status === "eliminated") {
-    return "rose";
-  }
-
-  return "zinc";
-}
-
-async function readApi<T>(response: Response): Promise<T> {
-  const payload = (await response.json()) as ApiResponse<T>;
-
-  if (!payload.ok) {
-    throw new Error(payload.error.message);
-  }
-
-  return payload.data;
-}
-
-function SelectTeam({
-  label,
-  value,
-  teams,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  teams: Team[];
-  onChange: (teamId: string) => void;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
-        {label}
-      </span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-12 w-full rounded-md border border-white/10 bg-[#0d1a15] px-3 text-sm text-white transition hover:border-emerald-300/40"
-      >
-        {teams.map((team) => (
-          <option key={team.id} value={team.id}>
-            {team.name}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function RoundBadge({ children }: { children: string }) {
-  return (
-    <span className="rounded border border-white/10 bg-white/10 px-2 py-1 text-xs font-semibold text-zinc-200">
-      {children}
-    </span>
-  );
-}
 
 export function DashboardClient({
   teams,
@@ -543,687 +459,60 @@ export function DashboardClient({
           className="rounded-lg"
         >
           {activeTab === "groups" ? (
-            <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {Object.entries(simulation.single.groupTables).map(
-                  ([group, table]) => (
-                    <Card key={group} className="overflow-hidden">
-                      <div className="flex items-center justify-between border-b border-white/10 p-4">
-                        <h2 className="text-lg font-semibold text-white">
-                          Group {group}
-                        </h2>
-                        <RoundBadge>Projected</RoundBadge>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full min-w-[420px] text-left text-sm">
-                          <thead className="text-xs uppercase tracking-[0.12em] text-zinc-400">
-                            <tr>
-                              <th className="px-4 py-3">Team</th>
-                              <th className="px-2 py-3">Pts</th>
-                              <th className="px-2 py-3">GD</th>
-                              <th className="px-2 py-3">GF</th>
-                              <th className="px-4 py-3">Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {table.map((row) => (
-                              <tr
-                                key={row.teamId}
-                                className="border-t border-white/5 text-zinc-200"
-                              >
-                                <td className="px-4 py-3 font-medium text-white">
-                                  {getTeamName(row.teamId)}
-                                </td>
-                                <td className="px-2 py-3">{row.points}</td>
-                                <td className="px-2 py-3">
-                                  {row.goalDifference > 0 ? "+" : ""}
-                                  {row.goalDifference}
-                                </td>
-                                <td className="px-2 py-3">{row.goalsFor}</td>
-                                <td className="px-4 py-3">
-                                  <StatusPill tone={statusTone(row.status)}>
-                                    {row.status}
-                                  </StatusPill>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </Card>
-                  ),
-                )}
-              </div>
-              <Card className="p-5">
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className="size-5 text-amber-200" aria-hidden="true" />
-                  <h2 className="text-lg font-semibold text-white">
-                    Best Third-Place Teams
-                  </h2>
-                </div>
-                <div className="mt-5 space-y-3">
-                  {simulation.single.bestThirdPlace.map((row, index) => (
-                    <div
-                      key={row.teamId}
-                      className="flex items-center justify-between rounded-md border border-white/10 bg-white/[0.04] p-3"
-                    >
-                      <div>
-                        <p className="font-semibold text-white">
-                          {index + 1}. {getTeamName(row.teamId)}
-                        </p>
-                        <p className="text-xs text-zinc-400">
-                          Group {row.group} | {row.points} pts | GD{" "}
-                          {row.goalDifference > 0 ? "+" : ""}
-                          {row.goalDifference}
-                        </p>
-                      </div>
-                      <StatusPill tone="amber">Bubble</StatusPill>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
+            <GroupsTab simulation={simulation} getTeamName={getTeamName} />
           ) : null}
 
           {activeTab === "predictor" ? (
-            <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
-              <Card className="p-5">
-                <div className="flex items-center gap-3">
-                  <BrainCircuit className="size-5 text-emerald-200" aria-hidden="true" />
-                  <h2 className="text-lg font-semibold text-white">
-                    Match Predictor
-                  </h2>
-                </div>
-                <div className="mt-5 grid gap-4">
-                  <SelectTeam
-                    label="Team A"
-                    value={teamAId}
-                    teams={teams}
-                    onChange={setTeamAId}
-                  />
-                  <SelectTeam
-                    label="Team B"
-                    value={teamBId}
-                    teams={teams}
-                    onChange={setTeamBId}
-                  />
-                  <button
-                    type="button"
-                    onClick={runPrediction}
-                    disabled={isPredicting || teamAId === teamBId}
-                    aria-busy={isPredicting}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-200 active:scale-[0.98] motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100"
-                  >
-                    {isPredicting ? (
-                      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                    ) : (
-                      <LineChart className="size-4" aria-hidden="true" />
-                    )}
-                    {isPredicting ? "Running..." : "Run prediction"}
-                  </button>
-                </div>
-              </Card>
-              <Card className="p-5">
-                {prediction ? (
-                  <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <StatusPill tone="emerald">
-                          Confidence {pct(prediction.confidence)}
-                        </StatusPill>
-                        <StatusPill tone="cyan">
-                          Rating gap {prediction.ratingGap}
-                        </StatusPill>
-                      </div>
-                      <div className="mt-6 space-y-5">
-                        {[
-                          {
-                            label: `${getTeamName(prediction.teamAId)} win`,
-                            value: prediction.probabilities.teamAWin,
-                          },
-                          {
-                            label: "Draw",
-                            value: prediction.probabilities.draw,
-                          },
-                          {
-                            label: `${getTeamName(prediction.teamBId)} win`,
-                            value: prediction.probabilities.teamBWin,
-                          },
-                        ].map((item) => (
-                          <div key={item.label}>
-                            <div className="mb-2 flex items-center justify-between text-sm">
-                              <span className="font-medium text-zinc-200">
-                                {item.label}
-                              </span>
-                              <span className="font-semibold text-white">
-                                {pct(item.value)}
-                              </span>
-                            </div>
-                            <ProbabilityBar value={item.value} />
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-6 rounded-md border border-white/10 bg-black/20 p-4">
-                        <p className="text-sm font-semibold text-white">
-                          Why this prediction?
-                        </p>
-                        <ul className="mt-3 space-y-2 text-sm leading-6 text-zinc-400">
-                          {prediction.explanation.map((line) => (
-                            <li key={line}>{line}</li>
-                          ))}
-                        </ul>
-                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                          {prediction.factors.map((factor) => (
-                            <div
-                              key={factor.label}
-                              className="rounded-md border border-white/10 bg-white/[0.04] p-3"
-                            >
-                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">
-                                {factor.label}
-                              </p>
-                              <p className="mt-1 font-semibold text-white">
-                                {factor.value}
-                              </p>
-                              <p className="mt-1 text-xs leading-5 text-zinc-400">
-                                {factor.note}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">
-                        Scoreline distribution
-                      </h3>
-                      <div className="mt-4 space-y-3">
-                        {prediction.topScorelines.map((scoreline) => (
-                          <div
-                            key={`${scoreline.homeGoals}-${scoreline.awayGoals}`}
-                            className="rounded-md border border-white/10 bg-white/[0.04] p-3"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-semibold text-white">
-                                {scoreline.homeGoals}-{scoreline.awayGoals}
-                              </span>
-                              <span className="text-sm text-zinc-300">
-                                {pct(scoreline.probability)}
-                              </span>
-                            </div>
-                            <div className="mt-2">
-                              <ProbabilityBar value={scoreline.probability} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="mt-5 text-sm leading-6 text-zinc-400">
-                        {prediction.uncertainty}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid min-h-[420px] place-items-center text-center">
-                    <div className="max-w-xs">
-                      <Sparkles
-                        className="mx-auto size-10 text-emerald-200"
-                        aria-hidden="true"
-                      />
-                      <p className="mt-4 text-lg font-semibold text-white">
-                        Select two teams to generate an explainable prediction.
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-zinc-400">
-                        Pick from the dropdowns on the left, then run the model to
-                        see win, draw, and loss probabilities with a plain-English
-                        rationale.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </Card>
-            </div>
+            <PredictorTab
+              teams={teams}
+              teamAId={teamAId}
+              teamBId={teamBId}
+              setTeamAId={setTeamAId}
+              setTeamBId={setTeamBId}
+              prediction={prediction}
+              isPredicting={isPredicting}
+              runPrediction={runPrediction}
+              getTeamName={getTeamName}
+            />
           ) : null}
 
           {activeTab === "simulator" ? (
-            <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-              <div className="space-y-6">
-                <Card className="p-5">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h2 className="text-lg font-semibold text-white">
-                        Monte Carlo Simulator
-                      </h2>
-                      <p className="mt-1 text-sm text-zinc-400">
-                        Current run: {simulation.metadata.simulationCount.toLocaleString()} iterations
-                        | seed {simulation.metadata.seed}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {simulationOptions.map((count) => (
-                        <button
-                          key={count}
-                          type="button"
-                          onClick={() => runSimulation(count)}
-                          disabled={isSimulating}
-                          aria-busy={isSimulating}
-                          aria-label={`Run ${count.toLocaleString()} Monte Carlo simulations`}
-                          className="inline-flex h-11 items-center gap-2 rounded-md border border-white/10 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15 active:scale-[0.98] motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-55"
-                        >
-                          {isPending || isSimulating ? (
-                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                          ) : (
-                            <Dices className="size-4" aria-hidden="true" />
-                          )}
-                          {count.toLocaleString()}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </Card>
-                <Card className="p-5">
-                  <div className="flex items-center gap-3">
-                    <Trophy className="size-5 text-amber-200" aria-hidden="true" />
-                    <h2 className="text-lg font-semibold text-white">
-                      Champion Probability
-                    </h2>
-                  </div>
-                  <p className="sr-only">
-                    {`Champion probability chart. Top teams: ${championData
-                      .slice(0, 3)
-                      .map((row) => `${row.name} ${row.champion}%`)
-                      .join(", ")}. Full values appear in the round probability table below.`}
-                  </p>
-                  <div
-                    className="relative mt-5 h-[320px] min-h-[320px] min-w-0"
-                    role="img"
-                    aria-label={`Bar chart of champion probability for the top ${championData.length} teams. Values are listed in the adjacent text summary and table.`}
-                  >
-                    {isSimulating ? (
-                      <div
-                        className="absolute inset-0 z-10 grid place-items-center rounded-md bg-[#0b1712]/70 backdrop-blur-sm"
-                        role="status"
-                      >
-                        <span className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-100">
-                          <Loader2
-                            className="size-4 animate-spin"
-                            aria-hidden="true"
-                          />
-                          Simulating tournament…
-                        </span>
-                      </div>
-                    ) : null}
-                    <ResponsiveContainer
-                      width="100%"
-                      height="100%"
-                      minWidth={0}
-                      minHeight={0}
-                      initialDimension={{ width: 640, height: 320 }}
-                    >
-                      <BarChart data={championData}>
-                        <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
-                        <XAxis dataKey="name" tick={{ fill: "#a1a1aa", fontSize: 12 }} />
-                        <YAxis tick={{ fill: "#a1a1aa", fontSize: 12 }} />
-                        <Tooltip
-                          cursor={{ fill: "rgba(255,255,255,0.06)" }}
-                          contentStyle={{
-                            background: "#0d1a15",
-                            border: "1px solid rgba(255,255,255,0.12)",
-                            borderRadius: 8,
-                            color: "#fff",
-                          }}
-                        />
-                        <Bar dataKey="champion" fill="#6ee7b7" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </Card>
-                <Card className="overflow-hidden">
-                  <div className="border-b border-white/10 p-5">
-                    <h2 className="text-lg font-semibold text-white">
-                      Round Probability Table
-                    </h2>
-                    <p className="mt-1 text-sm text-zinc-400">
-                      Top teams by title probability, with deep-run probabilities.
-                    </p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[520px] text-left text-sm">
-                      <thead className="text-xs uppercase tracking-[0.12em] text-zinc-400">
-                        <tr>
-                          <th className="px-5 py-3">Team</th>
-                          <th className="px-3 py-3">QF</th>
-                          <th className="px-3 py-3">SF</th>
-                          <th className="px-3 py-3">Final</th>
-                          <th className="px-3 py-3">Champion</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {simulation.probabilities.slice(0, 8).map((row) => (
-                          <tr key={row.teamId} className="border-t border-white/5">
-                            <td className="px-5 py-3 font-semibold text-white">
-                              {getTeamName(row.teamId)}
-                            </td>
-                            <td className="px-3 py-3 text-zinc-300">
-                              {pct(row.quarterFinal)}
-                            </td>
-                            <td className="px-3 py-3 text-zinc-300">
-                              {pct(row.semiFinal)}
-                            </td>
-                            <td className="px-3 py-3 text-zinc-300">
-                              {pct(row.final)}
-                            </td>
-                            <td className="px-3 py-3 font-semibold text-emerald-200">
-                              {pct(row.champion)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </Card>
-                <Card className="p-5">
-                  <h2 className="text-lg font-semibold text-white">
-                    Group Qualification Probability
-                  </h2>
-                  <div className="mt-4 space-y-3">
-                    {simulation.qualificationProbabilities.slice(0, 5).map((row) => (
-                      <div key={row.teamId}>
-                        <div className="mb-2 flex items-center justify-between text-sm">
-                          <span className="font-medium text-zinc-200">
-                            {getTeamName(row.teamId)}
-                          </span>
-                          <span className="font-semibold text-white">
-                            {pct(row.groupAdvance)}
-                          </span>
-                        </div>
-                        <ProbabilityBar value={row.groupAdvance} />
-                        <p className="mt-1 text-xs text-zinc-400">
-                          Top-two {pct(row.topTwo)} | best third {pct(row.bestThirdPlace)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </div>
-              <Card className="overflow-hidden">
-                <div className="border-b border-white/10 p-5">
-                  <h2 className="text-lg font-semibold text-white">
-                    Interactive Bracket Path
-                  </h2>
-                  <p className="mt-1 text-sm text-zinc-400">
-                    Single seeded tournament path from the latest simulation run.
-                  </p>
-                </div>
-                <div className="grid gap-4 overflow-x-auto p-5 lg:grid-cols-3">
-                  {simulation.single.bracket.map((round) => (
-                    <div key={round.name} className="min-w-[260px]">
-                      <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">
-                        {round.name}
-                      </h3>
-                      <div className="space-y-3">
-                        {round.matches.map((match) => (
-                          <div
-                            key={match.id}
-                            className="rounded-md border border-white/10 bg-white/[0.04] p-3"
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <span
-                                className={`text-sm ${
-                                  match.winnerTeamId === match.homeTeamId
-                                    ? "font-semibold text-white"
-                                    : "text-zinc-400"
-                                }`}
-                              >
-                                {getTeamName(match.homeTeamId)}
-                              </span>
-                              <span className="font-mono text-sm text-zinc-200">
-                                {match.homeGoals}
-                              </span>
-                            </div>
-                            <div className="mt-2 flex items-center justify-between gap-2">
-                              <span
-                                className={`text-sm ${
-                                  match.winnerTeamId === match.awayTeamId
-                                    ? "font-semibold text-white"
-                                    : "text-zinc-400"
-                                }`}
-                              >
-                                {getTeamName(match.awayTeamId)}
-                              </span>
-                              <span className="font-mono text-sm text-zinc-200">
-                                {match.awayGoals}
-                              </span>
-                            </div>
-                            {match.wentToPenalties ? (
-                              <p className="mt-2 text-xs text-amber-200">
-                                Advanced on penalties
-                              </p>
-                            ) : null}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
+            <SimulatorTab
+              simulation={simulation}
+              championData={championData}
+              isSimulating={isSimulating}
+              isPending={isPending}
+              runSimulation={runSimulation}
+              getTeamName={getTeamName}
+            />
           ) : null}
 
           {activeTab === "teams" && focusTeam && focusProbability ? (
-            <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-              <Card className="p-5">
-                <SelectTeam
-                  label="Team intelligence"
-                  value={teamFocusId}
-                  teams={teams}
-                  onChange={setTeamFocusId}
-                />
-                <div className="mt-6 rounded-lg border border-white/10 bg-white/[0.04] p-5">
-                  <div
-                    className="mb-5 h-2 rounded"
-                    style={{ backgroundColor: focusTeam.accent }}
-                  />
-                  <h2 className="text-2xl font-semibold text-white">
-                    {focusTeam.name}
-                  </h2>
-                  <p className="mt-1 text-sm text-zinc-400">
-                    {focusTeam.confederation} | Group {focusTeam.group}
-                  </p>
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
-                        Rating
-                      </p>
-                      <p className="mt-1 text-xl font-semibold text-white">
-                        {Math.round(focusRating?.rating ?? focusTeam.eloSeed)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
-                        Form
-                      </p>
-                      <p className="mt-1 text-xl font-semibold text-white">
-                        {(focusRating?.form ?? focusTeam.form).toFixed(1)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
-                        Attack
-                      </p>
-                      <p className="mt-1 text-xl font-semibold text-white">
-                        {(focusRating?.attack ?? focusTeam.attack).toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">
-                        Defense
-                      </p>
-                      <p className="mt-1 text-xl font-semibold text-white">
-                        {(focusRating?.defense ?? focusTeam.defense).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                  <Link
-                    href={`/teams/${focusTeam.id}`}
-                    className="mt-5 inline-flex h-11 items-center justify-center rounded-md border border-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.98] motion-reduce:active:scale-100"
-                  >
-                    Full team page
-                  </Link>
-                </div>
-              </Card>
-              <Card className="p-5">
-                <h2 className="text-lg font-semibold text-white">
-                  Most likely finish
-                </h2>
-                <div className="mt-5 space-y-5">
-                  {[
-                    ["Reach Round of 32", focusProbability.roundOf32],
-                    ["Reach Round of 16", focusProbability.roundOf16],
-                    ["Reach Quarter-finals", focusProbability.quarterFinal],
-                    ["Reach Semi-finals", focusProbability.semiFinal],
-                    ["Reach Final", focusProbability.final],
-                    ["Win Tournament", focusProbability.champion],
-                  ].map(([label, value]) => (
-                    <div key={label as string}>
-                      <div className="mb-2 flex items-center justify-between text-sm">
-                        <span className="font-medium text-zinc-200">
-                          {label as string}
-                        </span>
-                        <span className="font-semibold text-white">
-                          {pct(value as number)}
-                        </span>
-                      </div>
-                      <ProbabilityBar value={value as number} />
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
+            <TeamsTab
+              teams={teams}
+              teamFocusId={teamFocusId}
+              setTeamFocusId={setTeamFocusId}
+              focusTeam={focusTeam}
+              focusRating={focusRating}
+              focusProbability={focusProbability}
+            />
           ) : null}
 
           {activeTab === "leaderboard" ? (
-            <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
-              <Card className="p-5">
-                <div className="flex items-center gap-3">
-                  <Save className="size-5 text-emerald-200" aria-hidden="true" />
-                  <h2 className="text-lg font-semibold text-white">
-                    Prediction Game
-                  </h2>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-zinc-400">
-                  Demo placeholder leaderboard. Scores are model-aligned demo
-                  points from the baseline simulation; saved entries and links
-                  live in memory and reset on cold starts until a database
-                  adapter is wired.
-                </p>
-                <div className="mt-5 grid gap-4">
-                  <label>
-                    <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
-                      Display name
-                    </span>
-                    <input
-                      value={playerName}
-                      onChange={(event) => setPlayerName(event.target.value)}
-                      className="h-12 w-full rounded-md border border-white/10 bg-[#0d1a15] px-3 text-sm text-white transition hover:border-emerald-300/40"
-                    />
-                  </label>
-                  <SelectTeam
-                    label="Champion pick"
-                    value={championPick}
-                    teams={teams}
-                    onChange={setChampionPick}
-                  />
-                  <SelectTeam
-                    label="Finalist pick"
-                    value={finalistPick}
-                    teams={teams}
-                    onChange={setFinalistPick}
-                  />
-                  <button
-                    type="button"
-                    onClick={saveBracket}
-                    disabled={isSaving}
-                    aria-busy={isSaving}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-emerald-300 px-4 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-200 active:scale-[0.98] motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-55 disabled:active:scale-100"
-                  >
-                    {isSaving ? (
-                      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                    ) : (
-                      <Save className="size-4" aria-hidden="true" />
-                    )}
-                    {isSaving ? "Saving..." : "Save demo bracket"}
-                  </button>
-                  {savedBracketId ? (
-                    <Link
-                      href={`/bracket/${savedBracketId}`}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-emerald-300/30 bg-emerald-300/10 px-4 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-300/15"
-                    >
-                      <Share2 className="size-4" aria-hidden="true" />
-                      View temporary bracket link
-                    </Link>
-                  ) : null}
-                </div>
-              </Card>
-              <Card className="overflow-hidden">
-                <div className="border-b border-white/10 p-5">
-                  <h2 className="text-lg font-semibold text-white">
-                    Demo Placeholder Leaderboard
-                  </h2>
-                  <p className="mt-1 text-sm text-zinc-400">
-                    Points are not real tournament grading yet.
-                  </p>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[620px] text-left text-sm">
-                    <thead className="text-xs uppercase tracking-[0.12em] text-zinc-400">
-                      <tr>
-                        <th className="px-5 py-3">Rank</th>
-                        <th className="px-5 py-3">User</th>
-                        <th className="px-5 py-3">Champion</th>
-                        <th className="px-5 py-3">Finalist</th>
-                        <th className="px-5 py-3">Demo score</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {leaderboard.length === 0 ? (
-                        <tr className="border-t border-white/5">
-                          <td
-                            colSpan={5}
-                            className="px-5 py-8 text-center text-sm text-zinc-400"
-                          >
-                            No brackets saved yet — save one from the Simulator
-                            tab to appear here.
-                          </td>
-                        </tr>
-                      ) : null}
-                      {leaderboard.map((entry, index) => (
-                        <tr key={entry.id} className="border-t border-white/5">
-                          <td className="px-5 py-4 text-zinc-400">{index + 1}</td>
-                          <td className="px-5 py-4 font-semibold text-white">
-                            <Link
-                              href={`/bracket/${entry.id}`}
-                              className="text-white underline-offset-4 transition hover:text-emerald-200 hover:underline"
-                            >
-                              {entry.name}
-                            </Link>
-                          </td>
-                          <td className="px-5 py-4 text-zinc-300">
-                            {getTeamName(entry.championTeamId)}
-                          </td>
-                          <td className="px-5 py-4 text-zinc-300">
-                            {entry.finalistTeamId
-                              ? getTeamName(entry.finalistTeamId)
-                              : "Open"}
-                          </td>
-                          <td className="px-5 py-4 font-semibold text-emerald-200">
-                            {entry.score}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
-            </div>
+            <LeaderboardTab
+              teams={teams}
+              playerName={playerName}
+              setPlayerName={setPlayerName}
+              championPick={championPick}
+              setChampionPick={setChampionPick}
+              finalistPick={finalistPick}
+              setFinalistPick={setFinalistPick}
+              isSaving={isSaving}
+              saveBracket={saveBracket}
+              savedBracketId={savedBracketId}
+              leaderboard={leaderboard}
+              getTeamName={getTeamName}
+            />
           ) : null}
         </motion.div>
       </Section>
