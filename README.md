@@ -1,28 +1,21 @@
 # WorldCup Oracle
 
+[![CI](https://github.com/SandeepMadhavarapu/worldcup-oracle/actions/workflows/ci.yml/badge.svg)](https://github.com/SandeepMadhavarapu/worldcup-oracle/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 **WorldCup Oracle is a full-stack World Cup 2026 prediction intelligence PWA built with Next.js, TypeScript, explainable football modeling, and Monte Carlo tournament simulation.**
 
-Live demo placeholder: `https://your-vercel-deployment-url.vercel.app`
+Live demo: deployment pending — see `DEPLOYMENT.md` for the checklist.
 
 ## Screenshots
 
-Add screenshots after deployment:
+Screenshots are captured after deployment; see `public/screenshots/README.md` for the shot list and captions.
 
-- Landing page hero and analytics preview: `public/screenshots/landing-hero.png`
-- Tournament dashboard analytics: `public/screenshots/dashboard-analytics.png`
-- Match predictor explanation panel: `public/screenshots/match-predictor.png`
-- Bracket simulator champion probability chart: `public/screenshots/tournament-simulator.png`
-- Team intelligence page: `public/screenshots/team-intelligence.png`
-- Model Lab: `public/screenshots/model-lab.png`
+## Design Notes
 
-See `public/screenshots/README.md` for polished captions and capture guidance.
-
-## What Makes This Impressive
-
-- It is not a CRUD clone. The hard part is domain logic: ratings, score probabilities, group tiebreaking, third-place qualification, seeded knockout paths, and simulation aggregation.
+- The core of the project is domain logic: ratings, score probabilities, group tiebreaking, third-place qualification, seeded knockout paths, and simulation aggregation.
 - It uses honest product design. Sample data is labeled, live data is never faked, and predictions are clearly educational estimates.
 - It has a clean engineering split between UI, API routes, validation, prediction math, tournament rules, data loading, and future persistence.
-- It gives interviewers multiple discussion paths: frontend systems, backend validation, data modeling, sports analytics, testing, deployment, and product ethics.
+- The codebase separates frontend systems, backend validation, data modeling, sports analytics logic, and testing so each can be reviewed independently.
 
 ## Features
 
@@ -327,3 +320,7 @@ predictions are educational estimates, not betting advice.
 - Built a full-stack World Cup 2026 prediction platform using Next.js, TypeScript, API routes, Elo ratings, Poisson score modeling, and Monte Carlo tournament simulation.
 - Implemented 48-team tournament logic including group standings, third-place qualification, knockout brackets, seeded simulations, and explainable probability outputs.
 - Designed a production-style sports analytics dashboard with responsive UI, animated probability visualizations, API validation, automated tests, and deployment-ready documentation.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
