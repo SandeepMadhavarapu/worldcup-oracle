@@ -1174,6 +1174,17 @@ export function DashboardClient({
                       </tr>
                     </thead>
                     <tbody>
+                      {leaderboard.length === 0 ? (
+                        <tr className="border-t border-white/5">
+                          <td
+                            colSpan={5}
+                            className="px-5 py-8 text-center text-sm text-zinc-400"
+                          >
+                            No brackets saved yet — save one from the Simulator
+                            tab to appear here.
+                          </td>
+                        </tr>
+                      ) : null}
                       {leaderboard.map((entry, index) => (
                         <tr key={entry.id} className="border-t border-white/5">
                           <td className="px-5 py-4 text-zinc-400">{index + 1}</td>

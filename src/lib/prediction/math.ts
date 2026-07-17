@@ -1,3 +1,9 @@
+// Shared bounds for a single team's expected goals in one match. Used by BOTH
+// the analytic scoreline model and the Monte Carlo sampler so the two can never
+// disagree about what a plausible lambda is.
+export const EXPECTED_GOALS_MIN = 0.22;
+export const EXPECTED_GOALS_MAX = 3.65;
+
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }

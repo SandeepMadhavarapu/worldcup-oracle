@@ -5,7 +5,13 @@ import type {
   Team,
   TeamRating,
 } from "@/lib/types";
-import { clamp, poissonProbability, round } from "@/lib/prediction/math";
+import {
+  clamp,
+  EXPECTED_GOALS_MAX,
+  EXPECTED_GOALS_MIN,
+  poissonProbability,
+  round,
+} from "@/lib/prediction/math";
 
 const MAX_SCORELINE_GOALS = 6;
 
@@ -65,8 +71,8 @@ function expectedGoalsFor(
 
   return clamp(
     1.22 * Math.exp(ratingTerm + attackTerm + defenseTerm + formTerm + pedigreeTerm),
-    0.22,
-    3.65,
+    EXPECTED_GOALS_MIN,
+    EXPECTED_GOALS_MAX,
   );
 }
 

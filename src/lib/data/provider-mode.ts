@@ -1,16 +1,11 @@
 import { DATASET_MODE } from "@/lib/data/teams";
+import { readLiveDataProvider } from "@/lib/env";
 import type { ApiMeta, ProviderMode } from "@/lib/types";
 
-type LiveProvider = "none" | "football-data";
-
-function readProvider(): LiveProvider {
-  const provider = process.env.LIVE_DATA_PROVIDER;
-
-  if (provider === "football-data") {
-    return provider;
-  }
-
-  return "none";
+function readProvider(): "none" | "football-data" {
+  // Throws loudly on an invalid value instead of silently degrading to the
+  // sample dataset — see src/lib/env.ts.
+  return readLiveDataProvider();
 }
 
 export function getProviderMode(): ProviderMode {

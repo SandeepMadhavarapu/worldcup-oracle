@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { DATASET_MODE } from "@/lib/data";
 import { getLiveResolvedMatches } from "@/lib/calibration/live-results-service";
 import { getBaselineSimulation } from "@/lib/tournament/baseline";
@@ -8,44 +10,14 @@ import type {
   ResolvedMatchRepository,
 } from "@/lib/repositories/contracts";
 
-const demoEntries: LeaderboardEntry[] = [
-  {
-    id: "demo-1",
-    name: "Model Baseline",
-    championTeamId: "argentina",
-    finalistTeamId: "france",
-    score: 84,
-    createdAt: "2026-06-01T10:00:00.000Z",
-    mode: DATASET_MODE,
-  },
-  {
-    id: "demo-2",
-    name: "Upset Hunter",
-    championTeamId: "spain",
-    finalistTeamId: "brazil",
-    score: 78,
-    createdAt: "2026-06-02T15:30:00.000Z",
-    mode: DATASET_MODE,
-  },
-  {
-    id: "demo-3",
-    name: "Bracket Lab",
-    championTeamId: "england",
-    finalistTeamId: "portugal",
-    score: 71,
-    createdAt: "2026-06-04T18:10:00.000Z",
-    mode: DATASET_MODE,
-  },
-  {
-    id: "demo-4",
-    name: "Dark Horse Believer",
-    championTeamId: "morocco",
-    finalistTeamId: "portugal",
-    score: 63,
-    createdAt: "2026-06-05T12:00:00.000Z",
-    mode: DATASET_MODE,
-  },
-];
+// Hard cap so a public deployment cannot grow this store without bound. When
+// the cap is reached the OLDEST entry is evicted (FIFO): the leaderboard is a
+// demo, and honest recency beats hoarding.
+const MAX_LEADERBOARD_ENTRIES = 500;
+
+// Identical submissions inside this window return the existing entry instead
+// of creating a duplicate — double-clicks and retried requests stay idempotent.
+const DUPLICATE_WINDOW_MS = 30_000;
 
 const globalStore = globalThis as typeof globalThis & {
   worldCupOracleLeaderboard?: LeaderboardEntry[];
@@ -53,7 +25,9 @@ const globalStore = globalThis as typeof globalThis & {
 
 function getStore(): LeaderboardEntry[] {
   if (!globalStore.worldCupOracleLeaderboard) {
-    globalStore.worldCupOracleLeaderboard = [...demoEntries];
+    // Starts EMPTY. No fabricated seed entries: an empty demo leaderboard is
+    // honest; invented "users" are not.
+    globalStore.worldCupOracleLeaderboard = [];
   }
 
   return globalStore.worldCupOracleLeaderboard;
@@ -78,26 +52,58 @@ export function createModelDemoScore(
   return Math.max(1, Math.min(100, Math.round(rawScore)));
 }
 
+function findRecentDuplicate(
+  store: LeaderboardEntry[],
+  input: BracketSubmission,
+  now: number,
+): LeaderboardEntry | undefined {
+  return store.find(
+    (entry) =>
+      entry.name === input.name &&
+      entry.championTeamId === input.championTeamId &&
+      (entry.finalistTeamId ?? undefined) === (input.finalistTeamId ?? undefined) &&
+      now - Date.parse(entry.createdAt) < DUPLICATE_WINDOW_MS,
+  );
+}
+
 export const inMemoryLeaderboardRepository: LeaderboardRepository = {
   async list() {
     return [...getStore()].sort((left, right) => right.score - left.score);
   },
 
   async saveDemoBracket(input: BracketSubmission) {
+    const store = getStore();
+    const now = Date.now();
+
+    const duplicate = findRecentDuplicate(store, input, now);
+    if (duplicate) {
+      return duplicate;
+    }
+
     const entry: LeaderboardEntry = {
-      id: `demo-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      id: `demo-${randomUUID()}`,
       name: input.name,
       championTeamId: input.championTeamId,
       finalistTeamId: input.finalistTeamId,
       score: createModelDemoScore(input.championTeamId, input.finalistTeamId),
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(now).toISOString(),
       mode: DATASET_MODE,
     };
 
-    getStore().push(entry);
+    store.push(entry);
+
+    while (store.length > MAX_LEADERBOARD_ENTRIES) {
+      store.shift();
+    }
+
     return entry;
   },
 };
+
+/** Test hook: reset the in-memory leaderboard to its initial empty state. */
+export function resetLeaderboardForTests(): void {
+  globalStore.worldCupOracleLeaderboard = [];
+}
 
 export const inMemoryResolvedMatchRepository: ResolvedMatchRepository = {
   async list() {

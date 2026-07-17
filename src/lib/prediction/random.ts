@@ -1,3 +1,5 @@
+import { EXPECTED_GOALS_MAX, EXPECTED_GOALS_MIN } from "@/lib/prediction/math";
+
 export interface SeededRandom {
   next: () => number;
   int: (min: number, max: number) => number;
@@ -65,7 +67,10 @@ export function weightedChoice<T>(
 }
 
 export function samplePoisson(lambda: number, random: SeededRandom): number {
-  const boundedLambda = Math.max(0.05, Math.min(5.5, lambda));
+  const boundedLambda = Math.max(
+    EXPECTED_GOALS_MIN,
+    Math.min(EXPECTED_GOALS_MAX, lambda),
+  );
   const limit = Math.exp(-boundedLambda);
   let count = 0;
   let product = 1;

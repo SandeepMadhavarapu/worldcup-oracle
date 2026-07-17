@@ -1,4 +1,5 @@
 import { jsonError } from "@/lib/api/http";
+import { readRateLimitTrustProxy } from "@/lib/env";
 
 interface Bucket {
   count: number;
@@ -44,7 +45,7 @@ function lastForwardedHop(value: string | null): string | null {
  * ignored in favor of the request fingerprint.
  */
 function trustsForwardedFor(): boolean {
-  return process.env.RATE_LIMIT_TRUST_PROXY === "true";
+  return readRateLimitTrustProxy();
 }
 
 function stableHash(value: string): string {
