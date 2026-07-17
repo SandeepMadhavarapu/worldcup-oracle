@@ -7,10 +7,21 @@ import {
 } from "@/lib/data";
 import { createTournamentMatches } from "@/lib/tournament/simulator";
 import { apiHandler } from "@/lib/api/handler";
-import { jsonOk } from "@/lib/api/http";
+import { jsonOkCacheable } from "@/lib/api/http";
+import { paginationQuerySchema } from "@/lib/api/schemas";
 
-export const GET = apiHandler(async (_request, { requestId }) => {
-  return jsonOk(
+export const GET = apiHandler(async (request, { requestId }) => {
+  const { searchParams } = new URL(request.url);
+  const { limit, offset } = paginationQuerySchema.parse({
+    limit: searchParams.get("limit") ?? undefined,
+    offset: searchParams.get("offset") ?? undefined,
+  });
+
+  // Sample-mode data is static per deploy, so this read is cacheable with an
+  // ETag; historical rows are paginated so the payload stops growing linearly
+  // with the dataset.
+  return jsonOkCacheable(
+    request,
     {
       datasetMode: DATASET_MODE,
       providerMode: getProviderMode(),
@@ -18,10 +29,11 @@ export const GET = apiHandler(async (_request, { requestId }) => {
       tournamentStructure: createTournamentMatches(),
       worldCup2026Dataset: getWorldCup2026Dataset(),
       historicalSample: {
+        pagination: { limit, offset, total: historicalResults.length },
         rows: historicalResults.length,
-        matches: historicalResults,
+        matches: historicalResults.slice(offset, offset + limit),
       },
     },
-    { requestId },
+    { requestId, maxAgeSeconds: 300 },
   );
 });

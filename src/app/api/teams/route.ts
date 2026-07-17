@@ -1,12 +1,14 @@
 import { DATASET_MODE, getProviderMode, getProviderNotice, teams } from "@/lib/data";
 import { buildTeamRatings } from "@/lib/prediction/elo";
 import { apiHandler } from "@/lib/api/handler";
-import { jsonOk } from "@/lib/api/http";
+import { jsonOkCacheable } from "@/lib/api/http";
 
-export const GET = apiHandler(async (_request, { requestId }) => {
+export const GET = apiHandler(async (request, { requestId }) => {
   const ratings = buildTeamRatings();
 
-  return jsonOk(
+  // Static in sample mode -> ETag + short shared-cache lifetime.
+  return jsonOkCacheable(
+    request,
     {
       datasetMode: DATASET_MODE,
       providerMode: getProviderMode(),
@@ -14,6 +16,6 @@ export const GET = apiHandler(async (_request, { requestId }) => {
       teams,
       ratings: teams.map((team) => ratings.get(team.id)),
     },
-    { requestId },
+    { requestId, maxAgeSeconds: 300 },
   );
 });

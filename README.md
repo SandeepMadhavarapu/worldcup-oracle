@@ -192,8 +192,15 @@ Routes:
 - `POST /api/predict-match`
 - `POST /api/simulate-tournament`
 - `POST /api/save-bracket`
-- `GET /api/leaderboard`
+- `GET /api/leaderboard` (paginated: `?limit=&offset=`, default 50)
 - `GET /api/live` (near-live World Cup scores, cached 45s)
+
+Read-mostly sample-mode routes (`/api/teams`, `/api/matches`) serve weak ETags
+with `Cache-Control: public, max-age=300` and answer `If-None-Match` with 304.
+`/api/matches` historical rows are paginated with the same `limit`/`offset`
+convention. The API is unversioned by design while it has a single first-party
+consumer; a `/api/v1` prefix is the planned migration path the moment an
+external consumer exists.
 
 POST routes use Zod validation and a safer in-memory demo rate-limit helper. The limiter does not trust arbitrary `X-Forwarded-For` by itself, but it is still per-process. Public production should move rate-limit buckets to a shared store such as Upstash Redis, Vercel KV, Supabase, or another managed data store.
 

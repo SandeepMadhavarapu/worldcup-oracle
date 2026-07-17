@@ -31,6 +31,56 @@ class ApiRequestError extends Error {
   }
 }
 
+/**
+ * FNV-1a content hash used for weak ETags. Hashes ONLY the data payload — the
+ * envelope's meta (requestId, generatedAt) changes per response and must not
+ * defeat caching.
+ */
+function contentEtag(data: unknown): string {
+  const text = JSON.stringify(data);
+  let hash = 2166136261;
+
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return `W/"${(hash >>> 0).toString(36)}-${text.length.toString(36)}"`;
+}
+
+interface JsonOkCacheableOptions extends JsonOkOptions {
+  /** max-age for shared caches, in seconds. */
+  maxAgeSeconds: number;
+}
+
+/**
+ * Success envelope for effectively-static reads (sample-mode teams/matches):
+ * emits a weak ETag over the data payload and answers If-None-Match with an
+ * empty 304 so clients and CDNs can skip the body entirely.
+ */
+export function jsonOkCacheable<T>(
+  request: Request,
+  data: T,
+  options: JsonOkCacheableOptions,
+): Response {
+  const etag = contentEtag(data);
+  const cacheControl = `public, max-age=${options.maxAgeSeconds}, must-revalidate`;
+
+  if (request.headers.get("if-none-match") === etag) {
+    return new Response(null, {
+      status: 304,
+      headers: { ETag: etag, "Cache-Control": cacheControl },
+    });
+  }
+
+  const response = jsonOk(data, options);
+  const headers = new Headers(response.headers);
+  headers.set("ETag", etag);
+  headers.set("Cache-Control", cacheControl);
+
+  return new Response(response.body, { status: response.status, headers });
+}
+
 export function jsonOk<T>(data: T, options?: JsonOkOptions): Response {
   const requestId = options?.requestId ?? createRequestId();
   const headers = new Headers(options?.headers);
