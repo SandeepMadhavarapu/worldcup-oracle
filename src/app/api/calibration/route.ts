@@ -18,6 +18,7 @@ export const GET = apiHandler(async (_request, { requestId }) => {
       source: source.kind,
       synthetic: !source.isLive,
       resolvedCount: source.resolvedCount,
+      gradingCoverage: source.coverage ?? null,
       label: source.label,
       datasetExplanation: source.note,
       report,

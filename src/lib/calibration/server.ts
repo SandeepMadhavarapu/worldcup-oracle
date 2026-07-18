@@ -4,13 +4,17 @@
 // the page and the API can never disagree about which source is live.
 
 import { getDemoResolvedMatches } from "@/lib/calibration/demo-data";
+import { getLiveGradingResult } from "@/lib/calibration/live-results-service";
 import {
   selectCalibrationSource,
   type CalibrationSource,
 } from "@/lib/calibration/source";
-import { resolvedMatchRepository } from "@/lib/repositories";
 
 export async function getCalibrationSource(): Promise<CalibrationSource> {
-  const realResolvedMatches = await resolvedMatchRepository.list();
-  return selectCalibrationSource(realResolvedMatches, getDemoResolvedMatches());
+  const grading = await getLiveGradingResult();
+
+  return selectCalibrationSource(grading.matches, getDemoResolvedMatches(), {
+    finishedCount: grading.finishedCount,
+    skippedCount: grading.skippedCount,
+  });
 }

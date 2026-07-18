@@ -4,16 +4,23 @@
 // load the calibration page.
 
 import { createTtlCache } from "@/lib/live/cache";
-import { loadLiveResolvedMatches } from "@/lib/calibration/live-results";
+import {
+  loadLiveGradingResult,
+  type LiveGradingResult,
+} from "@/lib/calibration/live-results";
 import type { ResolvedMatch } from "@/lib/calibration/types";
 
 const RESOLVED_RESULTS_TTL_MS = 5 * 60 * 1000;
 
-const resolvedResultsCache = createTtlCache<ResolvedMatch[]>({
+const gradingResultCache = createTtlCache<LiveGradingResult>({
   ttlMs: RESOLVED_RESULTS_TTL_MS,
-  load: () => loadLiveResolvedMatches(),
+  load: () => loadLiveGradingResult(),
 });
 
-export function getLiveResolvedMatches(): Promise<ResolvedMatch[]> {
-  return resolvedResultsCache.get();
+export function getLiveGradingResult(): Promise<LiveGradingResult> {
+  return gradingResultCache.get();
+}
+
+export async function getLiveResolvedMatches(): Promise<ResolvedMatch[]> {
+  return (await getLiveGradingResult()).matches;
 }

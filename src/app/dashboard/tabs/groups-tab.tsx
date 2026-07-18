@@ -14,6 +14,12 @@ export function GroupsTab({
   getTeamName: (teamId: string) => string;
 }) {
   return (
+    <div>
+      <p className="mb-4 rounded-md border border-amber-300/15 bg-amber-300/[0.06] p-3 text-xs leading-5 text-amber-100/90">
+        These groups are the demo sample field the model was built on — not the
+        official 2026 draw. Tables below show one simulated outcome; real
+        finished matches grade the model on the Calibration page.
+      </p>
     <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {Object.entries(simulation.single.groupTables).map(
@@ -93,6 +99,7 @@ export function GroupsTab({
           ))}
         </div>
       </Card>
+    </div>
     </div>
   );
 }

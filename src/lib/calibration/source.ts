@@ -8,6 +8,11 @@ import type { ResolvedMatch } from "@/lib/calibration/types";
 
 export type CalibrationSourceKind = "live" | "illustrative";
 
+export interface GradingCoverage {
+  finishedCount: number;
+  skippedCount: number;
+}
+
 export interface CalibrationSource {
   kind: CalibrationSourceKind;
   /** True only when grading against real resolved results. */
@@ -20,6 +25,8 @@ export interface CalibrationSource {
   label: string;
   /** Longer honest explanation of what the numbers mean. */
   note: string;
+  /** Present in live mode: how many finished matches could(n't) be graded. */
+  coverage?: GradingCoverage;
 }
 
 export const ILLUSTRATIVE_LABEL = "Illustrative — no real matches resolved yet";
@@ -42,15 +49,24 @@ export function liveLabel(count: number): string {
   return `Live accuracy vs real results (${count} resolved)`;
 }
 
-export function liveNote(count: number): string {
-  const matchWord = count === 1 ? "match" : "matches";
-  const base = `Graded against ${count} real World Cup ${matchWord} resolved through the live feed. Each forecast is the engine's pre-match win/draw/loss probability; each outcome is the real final score.`;
-
-  if (count < SMALL_SAMPLE_THRESHOLD) {
-    return `${base} With fewer than ${SMALL_SAMPLE_THRESHOLD} resolved matches this is a progress view, not a statistically meaningful accuracy measurement.`;
+export function coverageNote(coverage: GradingCoverage | undefined): string {
+  if (!coverage || coverage.skippedCount === 0) {
+    return "";
   }
 
-  return `${base} This is genuine accuracy, not a self-graded sample.`;
+  return ` ${coverage.skippedCount} of ${coverage.finishedCount} finished matches involve teams outside this demo's 48-team sample field and are excluded rather than guessed.`;
+}
+
+export function liveNote(count: number, coverage?: GradingCoverage): string {
+  const matchWord = count === 1 ? "match" : "matches";
+  const base = `Graded against ${count} real World Cup ${matchWord} resolved through the live feed. Each forecast is the engine's pre-match win/draw/loss probability; each outcome is the real final score.`;
+  const suffix = coverageNote(coverage);
+
+  if (count < SMALL_SAMPLE_THRESHOLD) {
+    return `${base} With fewer than ${SMALL_SAMPLE_THRESHOLD} resolved matches this is a progress view, not a statistically meaningful accuracy measurement.${suffix}`;
+  }
+
+  return `${base} This is genuine accuracy, not a self-graded sample.${suffix}`;
 }
 
 /**
@@ -61,6 +77,7 @@ export function liveNote(count: number): string {
 export function selectCalibrationSource(
   liveMatches: ResolvedMatch[],
   syntheticMatches: ResolvedMatch[],
+  coverage?: GradingCoverage,
 ): CalibrationSource {
   if (liveMatches.length > 0) {
     return {
@@ -69,7 +86,8 @@ export function selectCalibrationSource(
       matches: liveMatches,
       resolvedCount: liveMatches.length,
       label: liveLabel(liveMatches.length),
-      note: liveNote(liveMatches.length),
+      note: liveNote(liveMatches.length, coverage),
+      coverage,
     };
   }
 

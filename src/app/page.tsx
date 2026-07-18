@@ -32,7 +32,9 @@ const providerModePills = {
 
 export default function Home() {
   const providerNotice = getProviderNotice();
-  const modePill = providerModePills[getProviderMode()];
+  const providerMode = getProviderMode();
+  const modePill = providerModePills[providerMode];
+  const isLive = providerMode === "LIVE_PROVIDER_MODE";
   const modeLabel = providerNotice.split(":")[0];
   const ratings = buildTeamRatings();
   const simulation = runTournamentSimulation({
@@ -123,8 +125,12 @@ export default function Home() {
           />
           <MetricCard
             label="Mode"
-            value="Demo"
-            detail="No fake live scores, no official tournament claims, no betting framing."
+            value={isLive ? "Live" : "Demo"}
+            detail={
+              isLive
+                ? "Real scores and result grading from a live provider; predictions still come from the demo dataset."
+                : "No fake live scores, no official tournament claims, no betting framing."
+            }
             tone="rose"
           />
         </div>
@@ -135,12 +141,13 @@ export default function Home() {
           <div>
             <StatusPill tone="emerald">Prediction Intelligence</StatusPill>
             <h2 className="mt-5 text-3xl font-semibold tracking-normal text-white sm:text-4xl">
-              Built like a serious internship portfolio project.
+              Every prediction explains itself.
             </h2>
             <p className="mt-4 text-base leading-8 text-zinc-400">
-              The product separates data loading, prediction math, tournament
-              rules, API validation, UI state, and persistence boundaries. The
-              app is intentionally honest about uncertainty and dataset mode.
+              Ratings, expected goals, scoreline distributions, and tournament
+              simulations are all computed in the open — every number links back
+              to the inputs that produced it, and the app is explicit about
+              uncertainty and where its data comes from.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -188,14 +195,18 @@ export default function Home() {
       <Section className="bg-[#10120d]">
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div>
-            <StatusPill tone="cyan">Live-Looking, Honestly Offline</StatusPill>
+            <StatusPill tone="cyan">
+              {isLive ? "Graded Against Real Results" : "Honest About Its Data"}
+            </StatusPill>
             <h2 className="mt-5 text-3xl font-semibold tracking-normal text-white">
-              Recruiters see the full-stack story in one screen.
+              {isLive
+                ? "The model is being scored against the real tournament."
+                : "The full story in one screen."}
             </h2>
             <p className="mt-4 text-sm leading-7 text-zinc-400">
-              The landing page exposes real product signals without pretending
-              they are live official predictions: model confidence, dark-horse
-              paths, likely finals, and dataset mode.
+              {isLive
+                ? "Finished matches stream in from the live feed and grade the engine's pre-match forecasts on the Calibration page — real accuracy, not a self-graded sample. Simulations below still run on the demo dataset and are labeled as such."
+                : "Model confidence, dark-horse paths, and likely finals — shown without pretending they are live official predictions, with the dataset mode always visible."}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

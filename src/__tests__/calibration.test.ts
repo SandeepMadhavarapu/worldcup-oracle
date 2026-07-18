@@ -158,3 +158,32 @@ describe("calibration report", () => {
     expect(report.runningBrier).toHaveLength(4);
   });
 });
+
+describe("grading coverage transparency", () => {
+  it("appends the skipped-match explanation when finished matches were dropped", async () => {
+    const { selectCalibrationSource } = await import("@/lib/calibration/source");
+    const live = [
+      {
+        id: "cov-1",
+        homeTeamId: "argentina",
+        awayTeamId: "france",
+        predicted: { win: 0.5, draw: 0.25, loss: 0.25 },
+        actual: "win" as const,
+        kickoff: "2026-07-01T00:00:00.000Z",
+      },
+    ];
+
+    const withSkips = selectCalibrationSource(live, [], {
+      finishedCount: 5,
+      skippedCount: 4,
+    });
+    expect(withSkips.note).toContain("4 of 5 finished matches");
+    expect(withSkips.coverage).toEqual({ finishedCount: 5, skippedCount: 4 });
+
+    const noSkips = selectCalibrationSource(live, [], {
+      finishedCount: 1,
+      skippedCount: 0,
+    });
+    expect(noSkips.note).not.toContain("finished matches involve teams");
+  });
+});

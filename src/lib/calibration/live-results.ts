@@ -117,23 +117,48 @@ export function buildResolvedMatchesFromLive(
   });
 }
 
+export interface LiveGradingResult {
+  matches: ResolvedMatch[];
+  /** Count of FINISHED provider matches, gradable or not. */
+  finishedCount: number;
+  /** Finished matches that could not be graded (teams outside the demo field). */
+  skippedCount: number;
+}
+
 /**
- * Load real graded results from the live provider. Never throws: returns [] when
- * no live provider is configured or the provider errors, so the calibration page
- * can fall back to the labeled synthetic illustration. `[]` here is a true "no
- * real matches resolved yet" signal, not an error to surface.
+ * Load real graded results from the live provider, with coverage counts so the
+ * UI can say "graded X of Y finished" instead of silently hiding the drops.
+ * Never throws: returns an empty result when no live provider is configured or
+ * the provider errors, so the calibration page can fall back to the labeled
+ * synthetic illustration.
  */
-export async function loadLiveResolvedMatches(
+export async function loadLiveGradingResult(
   deps: { fetchImpl?: typeof fetch } = {},
-): Promise<ResolvedMatch[]> {
+): Promise<LiveGradingResult> {
   if (getProviderMode() !== "LIVE_PROVIDER_MODE") {
-    return [];
+    return { matches: [], finishedCount: 0, skippedCount: 0 };
   }
 
   try {
     const finished = await fetchFinishedWorldCupMatches({ fetchImpl: deps.fetchImpl });
-    return buildResolvedMatchesFromLive(finished);
+    const finishedCount = finished.filter(
+      (match) => match.status === "finished",
+    ).length;
+    const matches = buildResolvedMatchesFromLive(finished);
+
+    return {
+      matches,
+      finishedCount,
+      skippedCount: finishedCount - matches.length,
+    };
   } catch {
-    return [];
+    return { matches: [], finishedCount: 0, skippedCount: 0 };
   }
+}
+
+/** Back-compat wrapper: graded matches only. */
+export async function loadLiveResolvedMatches(
+  deps: { fetchImpl?: typeof fetch } = {},
+): Promise<ResolvedMatch[]> {
+  return (await loadLiveGradingResult(deps)).matches;
 }
