@@ -4,7 +4,7 @@
 
 **WorldCup Oracle is a full-stack World Cup 2026 prediction intelligence PWA built with Next.js, TypeScript, explainable football modeling, and Monte Carlo tournament simulation.**
 
-Live demo: deployment pending — see `DEPLOYMENT.md` for the checklist.
+**Live demo: <https://worldcup-oracle-ecru.vercel.app>** — running in Live Provider Mode, grading the model against real 2026 World Cup results on the [Calibration page](https://worldcup-oracle-ecru.vercel.app/calibration).
 
 ## Screenshots
 

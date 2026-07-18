@@ -1,6 +1,6 @@
 # Deployment Checklist
 
-WorldCup Oracle is ready for Vercel deployment in Sample Dataset Mode.
+WorldCup Oracle is deployed at <https://worldcup-oracle-ecru.vercel.app> (Live Provider Mode). The checklist below covers redeployment.
 
 ## Before Deploying
 
