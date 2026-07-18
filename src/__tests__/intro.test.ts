@@ -62,4 +62,14 @@ describe("intro gate utilities", () => {
     expect(INTRO_DURATION_MS).toBe(10000);
     expect(INTRO_REDUCED_MOTION_DURATION_MS).toBeLessThan(INTRO_DURATION_MS);
   });
+
+  it("never auto-plays: the gate starts hidden and only replay shows it", async () => {
+    // Source-level contract check: the gate must initialize closed rather than
+    // consulting completion storage to decide on an auto-play.
+    const { readFileSync } = await import("node:fs");
+    const hook = readFileSync("src/hooks/useIntroGate.ts", "utf8");
+
+    expect(hook).toContain("useState(false)");
+    expect(hook).not.toContain("!hasIntroCompleted()");
+  });
 });
