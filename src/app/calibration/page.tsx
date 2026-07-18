@@ -69,10 +69,38 @@ export default async function CalibrationPage() {
       icon: Sigma,
       label: "Brier score",
       value: report.brierScore === null ? "N/A" : report.brierScore.toFixed(3),
-      detail: "Multi-class, win/draw/loss. 0 is perfect, 2 is worst.",
+      detail:
+        "Multi-class, win/draw/loss. 0 is perfect, 2 is worst; guessing 1/3 everywhere scores 0.667.",
+    },
+    {
+      icon: Sigma,
+      label: "Log loss",
+      value: report.logLoss === null ? "N/A" : report.logLoss.toFixed(3),
+      detail:
+        "Mean negative log-likelihood of the actual outcome. Uniform guessing scores 1.099.",
     },
     {
       icon: Target,
+      label: "Winner accuracy",
+      value:
+        report.accuracy === null
+          ? "N/A"
+          : `${(report.accuracy * 100).toFixed(1)}%`,
+      detail:
+        "How often the model's highest-probability pick was the actual result.",
+    },
+    {
+      icon: Target,
+      label: "Calibration error",
+      value:
+        report.calibrationError === null
+          ? "N/A"
+          : report.calibrationError.toFixed(3),
+      detail:
+        "Count-weighted gap between stated confidence and observed frequency. 0 is perfect.",
+    },
+    {
+      icon: ScanLine,
       label: "Graded forecasts",
       value: report.forecastCount.toLocaleString(),
       detail: "Three class forecasts per match across the diagram.",
@@ -147,7 +175,7 @@ export default async function CalibrationPage() {
       </Section>
 
       <Section>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {stats.map((item) => {
             const Icon = item.icon;
 
@@ -167,6 +195,56 @@ export default async function CalibrationPage() {
             );
           })}
         </div>
+      </Section>
+
+      <Section className="pt-0">
+        <Card className="overflow-hidden">
+          <div className="border-b border-white/10 p-5">
+            <h2 className="text-lg font-semibold text-white">
+              Accuracy by Confidence
+            </h2>
+            <p className="mt-1 text-sm text-zinc-400">
+              The core calibration question in table form: when the model is
+              more confident, is it actually right more often?
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[420px] text-left text-sm">
+              <thead className="text-xs uppercase tracking-[0.12em] text-zinc-400">
+                <tr>
+                  <th className="px-5 py-3">Top-pick confidence</th>
+                  <th className="px-3 py-3">Matches</th>
+                  <th className="px-3 py-3">Avg confidence</th>
+                  <th className="px-5 py-3">Top pick was right</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.confidenceBands.map((band) => (
+                  <tr
+                    key={`${band.rangeStart}`}
+                    className="border-t border-white/5"
+                  >
+                    <td className="px-5 py-3 font-medium text-white">
+                      {(band.rangeStart * 100).toFixed(0)}%–
+                      {(band.rangeEnd * 100).toFixed(0)}%
+                    </td>
+                    <td className="px-3 py-3 text-zinc-300">{band.count}</td>
+                    <td className="px-3 py-3 text-zinc-300">
+                      {band.avgConfidence === null
+                        ? "—"
+                        : `${(band.avgConfidence * 100).toFixed(1)}%`}
+                    </td>
+                    <td className="px-5 py-3 font-semibold text-emerald-200">
+                      {band.accuracy === null
+                        ? "—"
+                        : `${(band.accuracy * 100).toFixed(1)}%`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       </Section>
 
       <Section className="pt-0">
@@ -272,7 +350,10 @@ export default async function CalibrationPage() {
             </div>
             <div className="mt-4 space-y-4 text-sm leading-7 text-zinc-400">
               <p>{getProviderNotice()}</p>
-              <p>{source.note}</p>
+              <p>{source.note}{" "}
+            {source.resultsFetchedAt
+              ? `Results last fetched ${new Date(source.resultsFetchedAt).toISOString().slice(11, 16)} UTC; cached up to 5 minutes.`
+              : ""}</p>
             </div>
           </Card>
         </div>

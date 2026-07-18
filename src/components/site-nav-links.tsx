@@ -6,6 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Activity,
   BarChart3,
+  BookOpenCheck,
   Database,
   FlaskConical,
   Gauge,
@@ -18,6 +19,7 @@ const links: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/data-center", label: "Data", icon: Database },
   { href: "/model-lab", label: "Model Lab", icon: FlaskConical },
   { href: "/calibration", label: "Calibration", icon: Gauge },
+  { href: "/methodology", label: "Method", icon: BookOpenCheck },
 ];
 
 function isActive(pathname: string, href: string): boolean {

@@ -4,6 +4,7 @@
 
 import type {
   CalibrationReport,
+  ConfidenceBand,
   MatchOutcome,
   ReliabilityBucket,
   ResolvedMatch,
@@ -136,18 +137,147 @@ export function buildReliabilityDiagram(
   }));
 }
 
+const OUTCOME_ORDER: MatchOutcome[] = ["win", "draw", "loss"];
+
+/** Probability floor so a single maximally-wrong forecast cannot emit Infinity. */
+const LOG_LOSS_FLOOR = 1e-4;
+
+function actualProbability(match: ResolvedMatch): number {
+  const index = OUTCOME_ORDER.indexOf(match.actual);
+  return probabilityTriple(match)[index] ?? 0;
+}
+
+function topPick(match: ResolvedMatch): MatchOutcome {
+  const triple = probabilityTriple(match);
+  let best = 0;
+
+  for (let index = 1; index < triple.length; index += 1) {
+    if (triple[index] > triple[best]) {
+      best = index;
+    }
+  }
+
+  return OUTCOME_ORDER[best];
+}
+
+/** Mean negative log-likelihood of the realized outcome, or null when empty. */
+export function logLoss(matches: ResolvedMatch[]): number | null {
+  if (matches.length === 0) {
+    return null;
+  }
+
+  let total = 0;
+  for (const match of matches) {
+    total += -Math.log(Math.max(LOG_LOSS_FLOOR, actualProbability(match)));
+  }
+
+  return total / matches.length;
+}
+
+/** Fraction of matches whose top-probability pick occurred, or null. */
+export function topPickAccuracy(matches: ResolvedMatch[]): number | null {
+  if (matches.length === 0) {
+    return null;
+  }
+
+  const correct = matches.filter(
+    (match) => topPick(match) === match.actual,
+  ).length;
+
+  return correct / matches.length;
+}
+
 /**
- * Full calibration report: reliability diagram plus aggregate and running
- * Brier scores. Pure aggregation of the functions above.
+ * Expected calibration error over the pooled reliability buckets:
+ * count-weighted mean absolute gap between predicted and observed frequency.
+ */
+export function expectedCalibrationError(
+  buckets: ReliabilityBucket[],
+): number | null {
+  const populated = buckets.filter(
+    (bucket): bucket is ReliabilityBucket & { predicted: number; observed: number } =>
+      bucket.count > 0 && bucket.predicted !== null && bucket.observed !== null,
+  );
+  const total = populated.reduce((sum, bucket) => sum + bucket.count, 0);
+
+  if (total === 0) {
+    return null;
+  }
+
+  return populated.reduce(
+    (sum, bucket) =>
+      sum + (bucket.count / total) * Math.abs(bucket.predicted - bucket.observed),
+    0,
+  );
+}
+
+// Confidence bands for top-pick accuracy. A three-class forecast's top pick is
+// always ≥ 1/3, so the first band starts there.
+const CONFIDENCE_BAND_EDGES: Array<[number, number]> = [
+  [1 / 3, 0.45],
+  [0.45, 0.55],
+  [0.55, 0.65],
+  [0.65, 1.0000001],
+];
+
+/** Top-pick accuracy grouped by how confident the forecast was. */
+export function buildConfidenceBands(
+  matches: ResolvedMatch[],
+): ConfidenceBand[] {
+  return CONFIDENCE_BAND_EDGES.map(([rangeStart, rangeEnd]) => {
+    const inBand = matches.filter((match) => {
+      const confidence = Math.max(...probabilityTriple(match));
+      return confidence >= rangeStart && confidence < rangeEnd;
+    });
+
+    if (inBand.length === 0) {
+      return {
+        rangeStart,
+        rangeEnd: Math.min(1, rangeEnd),
+        count: 0,
+        avgConfidence: null,
+        accuracy: null,
+      };
+    }
+
+    const avgConfidence =
+      inBand.reduce(
+        (sum, match) => sum + Math.max(...probabilityTriple(match)),
+        0,
+      ) / inBand.length;
+    const correct = inBand.filter(
+      (match) => topPick(match) === match.actual,
+    ).length;
+
+    return {
+      rangeStart,
+      rangeEnd: Math.min(1, rangeEnd),
+      count: inBand.length,
+      avgConfidence,
+      accuracy: correct / inBand.length,
+    };
+  });
+}
+
+/**
+ * Full calibration report: reliability diagram plus aggregate metrics (Brier,
+ * log loss, top-pick accuracy, expected calibration error, confidence bands)
+ * and the running Brier stream. Pure aggregation of the functions above.
  */
 export function buildCalibrationReport(
   matches: ResolvedMatch[],
 ): CalibrationReport {
+  const buckets = buildReliabilityDiagram(matches);
+
   return {
     sampleSize: matches.length,
     forecastCount: matches.length * 3,
-    buckets: buildReliabilityDiagram(matches),
+    buckets,
     brierScore: brierScore(matches),
+    logLoss: logLoss(matches),
+    accuracy: topPickAccuracy(matches),
+    calibrationError: expectedCalibrationError(buckets),
+    confidenceBands: buildConfidenceBands(matches),
     runningBrier: runningBrierScore(matches),
   };
 }

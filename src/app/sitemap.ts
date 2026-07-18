@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/data-center",
     "/model-lab",
     "/calibration",
+    "/methodology",
     ...teams.map((team) => `/teams/${team.id}`),
   ].map((path) => ({
     url: `${baseUrl}${path}`,

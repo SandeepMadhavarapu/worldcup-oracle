@@ -13,8 +13,13 @@ import {
 export async function getCalibrationSource(): Promise<CalibrationSource> {
   const grading = await getLiveGradingResult();
 
-  return selectCalibrationSource(grading.matches, getDemoResolvedMatches(), {
-    finishedCount: grading.finishedCount,
-    skippedCount: grading.skippedCount,
-  });
+  return selectCalibrationSource(
+    grading.matches,
+    getDemoResolvedMatches(),
+    {
+      finishedCount: grading.finishedCount,
+      skippedCount: grading.skippedCount,
+    },
+    grading.fetchedAt,
+  );
 }

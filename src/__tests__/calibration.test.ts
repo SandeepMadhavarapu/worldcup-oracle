@@ -187,3 +187,83 @@ describe("grading coverage transparency", () => {
     expect(noSkips.note).not.toContain("finished matches involve teams");
   });
 });
+
+describe("aggregate evaluation metrics", () => {
+  const matches = [
+    {
+      id: "m1",
+      homeTeamId: "a",
+      awayTeamId: "b",
+      predicted: { win: 0.7, draw: 0.2, loss: 0.1 },
+      actual: "win" as const, // confident and right
+      kickoff: "2026-07-01T00:00:00.000Z",
+    },
+    {
+      id: "m2",
+      homeTeamId: "c",
+      awayTeamId: "d",
+      predicted: { win: 0.5, draw: 0.3, loss: 0.2 },
+      actual: "loss" as const, // moderately confident and wrong
+      kickoff: "2026-07-02T00:00:00.000Z",
+    },
+  ];
+
+  it("computes mean log loss of the realized outcomes", async () => {
+    const { logLoss } = await import("@/lib/calibration/calibration");
+    const expected = (-Math.log(0.7) + -Math.log(0.2)) / 2;
+
+    expect(logLoss(matches)).toBeCloseTo(expected, 10);
+    expect(logLoss([])).toBeNull();
+  });
+
+  it("computes top-pick accuracy", async () => {
+    const { topPickAccuracy } = await import("@/lib/calibration/calibration");
+
+    expect(topPickAccuracy(matches)).toBeCloseTo(0.5, 10);
+    expect(topPickAccuracy([])).toBeNull();
+  });
+
+  it("computes expected calibration error as a count-weighted gap", async () => {
+    const { expectedCalibrationError } = await import(
+      "@/lib/calibration/calibration"
+    );
+    const buckets = [
+      { bucket: 0, rangeStart: 0, rangeEnd: 0.5, count: 3, predicted: 0.4, observed: 0.3 },
+      { bucket: 1, rangeStart: 0.5, rangeEnd: 1, count: 1, predicted: 0.8, observed: 1 },
+      { bucket: 2, rangeStart: 0, rangeEnd: 0, count: 0, predicted: null, observed: null },
+    ];
+    // (3/4)*|0.4-0.3| + (1/4)*|0.8-1| = 0.075 + 0.05 = 0.125
+    expect(expectedCalibrationError(buckets)).toBeCloseTo(0.125, 10);
+    expect(expectedCalibrationError([])).toBeNull();
+  });
+
+  it("bands matches by top-pick confidence with per-band accuracy", async () => {
+    const { buildConfidenceBands } = await import(
+      "@/lib/calibration/calibration"
+    );
+    const bands = buildConfidenceBands(matches);
+
+    const highBand = bands.find((band) => band.rangeStart === 0.65);
+    expect(highBand?.count).toBe(1); // the 0.7-confidence match
+    expect(highBand?.accuracy).toBe(1);
+
+    const midBand = bands.find((band) => band.rangeStart === 0.45);
+    expect(midBand?.count).toBe(1); // the 0.5-confidence match
+    expect(midBand?.accuracy).toBe(0);
+
+    const totalBanded = bands.reduce((sum, band) => sum + band.count, 0);
+    expect(totalBanded).toBe(matches.length);
+  });
+
+  it("includes all aggregate metrics in the full report", async () => {
+    const { buildCalibrationReport } = await import(
+      "@/lib/calibration/calibration"
+    );
+    const report = buildCalibrationReport(matches);
+
+    expect(report.logLoss).not.toBeNull();
+    expect(report.accuracy).toBeCloseTo(0.5, 10);
+    expect(report.calibrationError).not.toBeNull();
+    expect(report.confidenceBands).toHaveLength(4);
+  });
+});

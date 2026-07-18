@@ -47,6 +47,24 @@ export interface RunningBrierPoint {
   brier: number;
 }
 
+/**
+ * Accuracy of the model's top pick within one band of forecast confidence
+ * (confidence = the highest of the three class probabilities). The critical
+ * calibration question in table form: when the model is ~65% sure, is it right
+ * ~65% of the time?
+ */
+export interface ConfidenceBand {
+  /** Inclusive lower bound of the top-pick probability for this band. */
+  rangeStart: number;
+  /** Exclusive upper bound (inclusive for the last band). */
+  rangeEnd: number;
+  count: number;
+  /** Mean top-pick probability in the band, or null when empty. */
+  avgConfidence: number | null;
+  /** Fraction of matches where the top pick was the actual outcome. */
+  accuracy: number | null;
+}
+
 export interface CalibrationReport {
   /** Number of resolved matches graded. */
   sampleSize: number;
@@ -55,6 +73,17 @@ export interface CalibrationReport {
   buckets: ReliabilityBucket[];
   /** Mean multi-class Brier score, or `null` when there are no matches. */
   brierScore: number | null;
+  /** Mean negative log-likelihood of the actual outcome, or `null`. */
+  logLoss: number | null;
+  /** Fraction of matches where the model's top pick occurred, or `null`. */
+  accuracy: number | null;
+  /**
+   * Expected calibration error: count-weighted mean |predicted − observed|
+   * over the populated reliability buckets. 0 is perfectly calibrated.
+   */
+  calibrationError: number | null;
+  /** Top-pick accuracy broken down by forecast confidence band. */
+  confidenceBands: ConfidenceBand[];
   /** Cumulative Brier score after each match, in input order. */
   runningBrier: RunningBrierPoint[];
 }

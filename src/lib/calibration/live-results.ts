@@ -123,6 +123,8 @@ export interface LiveGradingResult {
   finishedCount: number;
   /** Finished matches that could not be graded (teams outside the demo field). */
   skippedCount: number;
+  /** When the provider was last queried (ISO). Null when nothing was fetched. */
+  fetchedAt: string | null;
 }
 
 /**
@@ -136,7 +138,7 @@ export async function loadLiveGradingResult(
   deps: { fetchImpl?: typeof fetch } = {},
 ): Promise<LiveGradingResult> {
   if (getProviderMode() !== "LIVE_PROVIDER_MODE") {
-    return { matches: [], finishedCount: 0, skippedCount: 0 };
+    return { matches: [], finishedCount: 0, skippedCount: 0, fetchedAt: null };
   }
 
   try {
@@ -150,9 +152,10 @@ export async function loadLiveGradingResult(
       matches,
       finishedCount,
       skippedCount: finishedCount - matches.length,
+      fetchedAt: new Date().toISOString(),
     };
   } catch {
-    return { matches: [], finishedCount: 0, skippedCount: 0 };
+    return { matches: [], finishedCount: 0, skippedCount: 0, fetchedAt: null };
   }
 }
 

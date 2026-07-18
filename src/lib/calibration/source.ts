@@ -27,6 +27,8 @@ export interface CalibrationSource {
   note: string;
   /** Present in live mode: how many finished matches could(n't) be graded. */
   coverage?: GradingCoverage;
+  /** When live results were last fetched from the provider (ISO), if ever. */
+  resultsFetchedAt?: string | null;
 }
 
 export const ILLUSTRATIVE_LABEL = "Illustrative — no real matches resolved yet";
@@ -78,6 +80,7 @@ export function selectCalibrationSource(
   liveMatches: ResolvedMatch[],
   syntheticMatches: ResolvedMatch[],
   coverage?: GradingCoverage,
+  resultsFetchedAt?: string | null,
 ): CalibrationSource {
   if (liveMatches.length > 0) {
     return {
@@ -88,6 +91,7 @@ export function selectCalibrationSource(
       label: liveLabel(liveMatches.length),
       note: liveNote(liveMatches.length, coverage),
       coverage,
+      resultsFetchedAt,
     };
   }
 
